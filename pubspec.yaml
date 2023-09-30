@@ -1,0 +1,68 @@
+name: gurbani_app
+description: A new Flutter project.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  go_router: ^11.1.2
+  sqflite: ^2.3.0
+  flutter_screenutil: ^5.9.0
+  path_provider: ^2.1.1
+  archive: ^3.4.4
+  flutter_isolate: ^2.0.4
+  get_it: ^7.6.4
+  permission_handler: ^11.0.0
+  gurmukhi_utils:
+  animated_text_kit: ^4.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/database.zip
+    - assets/images/
+
+  fonts:
+    #NotoSans Gurmukhi Font Family...
+    - family: Gurmukhi-Bold
+      fonts:
+        - asset: assets/fonts/Gurmukhi-Bold.ttf
+
+    - family: Gurmukhi-Medium
+      fonts:
+        - asset: assets/fonts/Gurmukhi-Medium.ttf
+
+    - family: Gurmukhi-Regular
+      fonts:
+        - asset: assets/fonts/Gurmukhi-Regular.ttf
+
+    - family: AnmolUni
+      fonts:
+        - asset: assets/fonts/AnmolUni.ttf
+
+    #Montserrat Font Family...
+    - family: Montserrat-Regular
+      fonts:
+        - asset: assets/fonts/Montserrat-Regular.ttf
+
+    - family: Montserrat-Bold
+      fonts:
+        - asset: assets/fonts/Montserrat-Bold.ttf
+
+
+    - family: Montserrat-ExtraBold
+      fonts:
+        - asset: assets/fonts/Montserrat-ExtraBold.ttf
+
+    - family: Montserrat-Light
+      fonts:
+        - asset: assets/fonts/Montserrat-Light.ttf
