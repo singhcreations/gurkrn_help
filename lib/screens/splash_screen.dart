@@ -20,8 +20,10 @@ class SplashScreen extends StatefulWidget {
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
+//run krke dikhao
 
 class _SplashScreenState extends State<SplashScreen> {
+  
   bool initializingDatabase = false;
   late ReceivePort receivePort;
   late FlutterIsolate isolate;
@@ -43,7 +45,8 @@ class _SplashScreenState extends State<SplashScreen> {
     final ByteData data = args['data'];
     final SendPort sendPort = args['sendPort'];
 
-    List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    List<int> bytes =
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = "${documentsDirectory.path}/gurbani_database.sqlite";
     File file = File("$path.zip");
@@ -58,12 +61,13 @@ class _SplashScreenState extends State<SplashScreen> {
       await outFile.writeAsBytes(data, flush: true);
     }
 
-    sendPort.send(1);  // Finished decompression
+    sendPort.send(1); // Finished decompression
   }
 
   Future<bool> checkDatabaseExists() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = p.join(documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
+    String path = p.join(
+        documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
     return File(path).exists();
   }
 
@@ -72,7 +76,8 @@ class _SplashScreenState extends State<SplashScreen> {
     if (status.isGranted) {
       // Now you can open the database
       Directory documentsDirectory = await getApplicationDocumentsDirectory();
-      String path = p.join(documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
+      String path = p.join(
+          documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
       Database db = await openDatabase(path, readOnly: false, version: 1);
 
       //You can use this instance anywhere in the app...
@@ -101,7 +106,6 @@ class _SplashScreenState extends State<SplashScreen> {
         });
       } else {
         Future.delayed(const Duration(seconds: 2, milliseconds: 500), () async {
-
           //initialize database when you know its already ready to use...
           await _initDatabase();
 
@@ -154,81 +158,88 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 1.sw,
               height: 80.sp,
               padding: EdgeInsets.symmetric(horizontal: 28.sp),
-              child: initializingDatabase ? Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Please wait",
-                        style: TextStyle(
-                          fontFamily: "Montserrat-Regular",
-                          fontSize: 14.sp,
-                          color: Colors.black54
+              child: initializingDatabase
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Please wait",
+                              style: TextStyle(
+                                  fontFamily: "Montserrat-Regular",
+                                  fontSize: 14.sp,
+                                  color: Colors.black54),
+                            ),
+                            SizedBox(
+                              width: 12.sp,
+                            ),
+                            SizedBox(
+                              width: 16.sp,
+                              height: 16.sp,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 1.6,
+                              ),
+                            )
+                          ],
                         ),
-                      ),
-                      SizedBox(
-                        width: 12.sp,
-                      ),
-                      SizedBox(
-                        width: 16.sp,
-                        height: 16.sp,
-                        child: const CircularProgressIndicator(
-                          strokeWidth: 1.6,
+                        SizedBox(
+                          height: 12.sp,
                         ),
-                      )
-                    ],
-                  ),
-                  SizedBox(
-                    height: 12.sp,
-                  ),
-                  DefaultTextStyle(
-                    style: const TextStyle(
-                      fontSize: 14.0,
-                      fontFamily: 'Montserrat-Regular',
-                      color: Colors.black
-                    ),
-                    textAlign: TextAlign.center,
-                    child: AnimatedTextKit(
-                      animatedTexts: [
-                        RotateAnimatedText('Initiating divine connection'),
-                        RotateAnimatedText('Fetching insights from Gurbani'),
-                        RotateAnimatedText('Bringing eternal wisdom to your fingertips'),
-                        RotateAnimatedText('Loading interpretations from Sri Guru Granth Sahib Ji'),
-                        RotateAnimatedText('Gathering celestial blessings'),
-                        RotateAnimatedText('Loading spiritual discourses'),
-                        RotateAnimatedText('Your gateway to divine understanding is unfolding'),
-                        RotateAnimatedText('Aligning sacred teachings'),
-                        RotateAnimatedText('Almost there, holding the blessings...'),
+                        DefaultTextStyle(
+                          style: const TextStyle(
+                              fontSize: 14.0,
+                              fontFamily: 'Montserrat-Regular',
+                              color: Colors.black),
+                          textAlign: TextAlign.center,
+                          child: AnimatedTextKit(
+                            animatedTexts: [
+                              RotateAnimatedText(
+                                  'Initiating divine connection'),
+                              RotateAnimatedText(
+                                  'Fetching insights from Gurbani'),
+                              RotateAnimatedText(
+                                  'Bringing eternal wisdom to your fingertips'),
+                              RotateAnimatedText(
+                                  'Loading interpretations from Sri Guru Granth Sahib Ji'),
+                              RotateAnimatedText(
+                                  'Gathering celestial blessings'),
+                              RotateAnimatedText(
+                                  'Loading spiritual discourses'),
+                              RotateAnimatedText(
+                                  'Your gateway to divine understanding is unfolding'),
+                              RotateAnimatedText('Aligning sacred teachings'),
+                              RotateAnimatedText(
+                                  'Almost there, holding the blessings...'),
+                            ],
+                          ),
+                        )
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Please wait",
+                          style: TextStyle(
+                              fontFamily: "Montserrat-Regular",
+                              fontSize: 14.sp),
+                        ),
+                        SizedBox(
+                          width: 12.sp,
+                        ),
+                        SizedBox(
+                          width: 16.sp,
+                          height: 16.sp,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 1.6,
+                          ),
+                        )
                       ],
                     ),
-                  )
-                ],
-              ) : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Please wait",
-                    style: TextStyle(
-                        fontFamily: "Montserrat-Regular",
-                        fontSize: 14.sp
-                    ),
-                  ),
-                  SizedBox(
-                    width: 12.sp,
-                  ),
-                  SizedBox(
-                    width: 16.sp,
-                    height: 16.sp,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 1.6,
-                    ),
-                  )
-                ],
-              ),
             ),
           ],
         ),

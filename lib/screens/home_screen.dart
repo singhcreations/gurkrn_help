@@ -1,51 +1,73 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:gurmukhi_utils/gurmukhi_utils.dart';
+import 'package:gurbani_app/models/baani_lines_model.dart';
+import 'package:gurbani_app/widgets/baani_view_widget.dart';
 import 'package:sqflite/sqflite.dart';
 
+//ToDo: This class has to be renamed because this won't be the homescreen
+//telegram pe msg kr oe ladke
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int offset;
+  const HomeScreen({super.key, required this.offset});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Map<String, dynamic>>? _rows;
+  List<BaaniLineModel> baaniLines = List.empty(growable: true);
   @override
   void initState() {
     super.initState();
 
-    // to get all tables in the database
-    // GetIt.I<Database>().rawQuery(
-    //   'SELECT name FROM sqlite_master WHERE type="table"',
-    // ).then((value) {
-    //   log(value.toString(), name: "QUERY");
-    // });
-
-    GetIt.I<Database>().rawQuery(
-      'SELECT * FROM lines LIMIT 10',
-    ).then((value) {
-      setState(() {
-        _rows = value;
+    GetIt.I<Database>()
+        .rawQuery(
+            'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset}')
+        .then((value) {
+      value?.forEach((element) {
+        baaniLines.add(BaaniLineModel.fromJson(element));
       });
+      setState(() {});
     });
-
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        body: ListView(
-          children: _rows == null ? [const Text("Empty")] : _rows!.map((e) => Text(
-            asciiToGurmukhi(e["gurmukhi"]),
-            style: const TextStyle(
-              fontFamily: "AnmolUni",
-            ),
-          )).toList()
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            BaaniPageView(baaniLines: baaniLines),
+            Positioned(
+                bottom: 10,
+                right: 10,
+                child: Column(
+                  children: [
+                    IconButton(
+                        onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => HomeScreen(
+                                      offset: widget.offset - 10,
+                                    ))),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                        )),
+                    IconButton(
+                        onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => HomeScreen(
+                                      offset: widget.offset + 10,
+                                    ))),
+                        icon: const Icon(Icons.arrow_forward,
+                            color: Colors.white)),
+                  ],
+                ))
+          ],
         ),
       ),
     );
