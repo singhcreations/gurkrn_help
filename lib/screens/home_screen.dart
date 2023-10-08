@@ -31,13 +31,50 @@ double _clampMin(double v) {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<BaaniLineModel> baaniLines = List.empty(growable: true);
-    final GlobalKey<FlipWidgetState> _flipKey = GlobalKey();
+  final GlobalKey<FlipWidgetState> _flipKey = GlobalKey();
+
+  List<BaaniLineModel> currentAng = List.empty(growable: true);
+  List<BaaniLineModel> previousAng = List.empty(growable: true);
+  List<BaaniLineModel> nextAng = List.empty(growable: true);
+
+  updateGurbaniLists(int offset) {
+    GetIt.I<Database>()
+        .rawQuery(
+            'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset}')
+        .then((value) {
+      for (var element in value) {
+        currentAng.add(BaaniLineModel.fromJson(element));
+      }
+    });
+    GetIt.I<Database>()
+        .rawQuery(
+            'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset + 10}')
+        .then((value) {
+      for (var element in value) {
+        nextAng.add(BaaniLineModel.fromJson(element));
+      }
+    });
+    if (offset >= 10) {
+      GetIt.I<Database>()
+          .rawQuery(
+              'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset - 10}')
+          .then((value) {
+        for (var element in value) {
+          previousAng.add(BaaniLineModel.fromJson(element));
+        }
+      });
+    }
+    setState(() {});
+  }
+
+  int offset = 0;
 
   Offset _oldPosition = Offset.zero;
   @override
   void initState() {
     super.initState();
-
+    offset = widget.offset;
+    updateGurbaniLists(offset); //kro
     GetIt.I<Database>()
         .rawQuery(
             'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset}')
@@ -51,13 +88,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-        Size size = MediaQuery.sizeOf(context);
+    updateGurbaniLists(offset);
+
+    Size size = MediaQuery.sizeOf(context);
 
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
           children: [
+            Container(
+              color: Colors.black,
+              child: Center(
+                child: BaaniPageView(baaniLines: nextAng),
+              ),
+            ),
+
+//kro ik var
+//same as before just smooth onlu
+
             SizedBox(
               width: size.width,
               height: size.height,
@@ -65,13 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: FlipWidget(
                   key: _flipKey,
                   textureSize: size * 2,
+                  // leftToRight: true, //
                   child: Container(
                     color: Colors.black,
                     child: Center(
-                      child: BaaniPageView(baaniLines: baaniLines),
+                      child: BaaniPageView(baaniLines: currentAng),
                     ),
                   ),
-                  // leftToRight: true,
                 ),
                 onHorizontalDragStart: (details) {
                   _oldPosition = details.globalPosition;
@@ -86,39 +135,50 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 onHorizontalDragEnd: (details) {
                   _flipKey.currentState?.stopFlip();
+                  updateGurbaniLists(offset + 10);//kro
+
+                  //ni ho reha ruk reha inbetween
+
+                  // Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => HomeScreen(
+                  //               offset: widget.offset + 10,
+                  //             )));
                 },
                 onHorizontalDragCancel: () {
                   _flipKey.currentState?.stopFlip();
                 },
               ),
             ),
-            Positioned(
-                bottom: 10,
-                right: 10,
-                child: Column(
-                  children: [
-                    IconButton(
-                        onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => HomeScreen(
-                                      offset: widget.offset - 10,
-                                    ))),
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                        )),
-                    IconButton(
-                        onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => HomeScreen(
-                                      offset: widget.offset + 10,
-                                    ))),
-                        icon: const Icon(Icons.arrow_forward,
-                            color: Colors.white)),
-                  ],
-                ))
+            // Positioned(
+            //     bottom: 10,
+            //     right: 10,
+            //     child: Column(//aap opera mini use krte ho? yes
+            //     //left side se turn pe bhi kam kar rah h content next ka a raha h
+            //       children: [
+            //         IconButton(
+            //             onPressed: () => Navigator.push(
+            //                 context,
+            //                 MaterialPageRoute(
+            //                     builder: (context) => HomeScreen(
+            //                           offset: widget.offset - 10,
+            //                         ))),
+            //             icon: const Icon(
+            //               Icons.arrow_back,
+            //               color: Colors.white,
+            //             )),
+            //         IconButton(
+            //             onPressed: () => Navigator.push(
+            //                 context,
+            //                 MaterialPageRoute(
+            //                     builder: (context) => HomeScreen(
+            //                           offset: widget.offset + 10,
+            //                         ))),
+            //             icon: const Icon(Icons.arrow_forward,
+            //                 color: Colors.white)),
+            //       ],
+            //     ))
           ],
         ),
       ),

@@ -21,6 +21,8 @@ dependencies:
   get_it: ^7.6.4
   go_router: ^11.1.2
   gurmukhi_utils:
+  google_fonts: 6.1.0
+  lottie: ^1.4.1
   sqflite: ^2.3.0  
   path_provider: ^2.0.15  
   permission_handler: ^11.0.0 
@@ -34,8 +36,12 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/
+
     - assets/database.zip
     - assets/images/
+    - assets/lottiee/tick.json
+    - assets/lottiee/timeslotanim.json
 
   fonts:
     #NotoSans Gurmukhi Font Family...
