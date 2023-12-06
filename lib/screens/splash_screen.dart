@@ -23,7 +23,6 @@ class SplashScreen extends StatefulWidget {
 //run krke dikhao
 
 class _SplashScreenState extends State<SplashScreen> {
-  
   bool initializingDatabase = false;
   late ReceivePort receivePort;
   late FlutterIsolate isolate;
@@ -101,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
             //initialize database once its ready to use...
             await _initDatabase();
 
-            GoRouter.of(context).replace('/name');
+            GoRouter.of(context).replace('/home');
           }
         });
       } else {
@@ -109,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
           //initialize database when you know its already ready to use...
           await _initDatabase();
 
-          GoRouter.of(context).replace('/name');
+          GoRouter.of(context).replace('/home');
         });
       }
     });
