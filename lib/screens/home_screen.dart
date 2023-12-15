@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:gurbani_app/models/baani_lines_model.dart';
+import 'package:gurbani_app/services/reader.dart';
 import 'package:gurbani_app/widgets/baani_view_widget.dart';
-import 'package:sqflite/sqflite.dart';
 import 'dart:math' as math;
 
 import 'package:flip_widget/flip_widget.dart';
@@ -10,8 +9,8 @@ import 'package:flip_widget/flip_widget.dart';
 //ToDo: This class has to be renamed because this won't be the homescreen
 
 class HomeScreen extends StatefulWidget {
-  final int offset;
-  const HomeScreen({super.key, required this.offset});
+  final int pageNo;
+  const HomeScreen({super.key, this.pageNo = 1});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -37,58 +36,28 @@ class _HomeScreenState extends State<HomeScreen> {
   List<BaaniLineModel> previousAng = List.empty(growable: true);
   List<BaaniLineModel> nextAng = List.empty(growable: true);
 
-  updateGurbaniLists(int offset) {
-    GetIt.I<Database>()
-        .rawQuery(
-            'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset}')
-        .then((value) {
-      for (var element in value) {
-        currentAng.add(BaaniLineModel.fromJson(element));
-      }
-    });
-    GetIt.I<Database>()
-        .rawQuery(
-            'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset + 10}')
-        .then((value) {
-      for (var element in value) {
-        nextAng.add(BaaniLineModel.fromJson(element));
-      }
-    });
-    if (offset >= 10) {
-      GetIt.I<Database>()
-          .rawQuery(
-              'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset - 10}')
-          .then((value) {
-        for (var element in value) {
-          previousAng.add(BaaniLineModel.fromJson(element));
-        }
-      });
-    }
-    setState(() {});
+  updateGurbaniLists(int pageNo) async {
+    currentAng = await Reader.getAngs(pageNo: pageNo);
+    nextAng = await Reader.getAngs(pageNo: pageNo + 1);
+    previousAng = pageNo ==0 ? List<BaaniLineModel>.empty() : await Reader.getAngs(pageNo: pageNo - 1);
+    baaniLines = currentAng;
+    // setState(() {});
   }
 
-  int offset = 0;
+  int pageNo = 1;
 
   Offset _oldPosition = Offset.zero;
   @override
   void initState() {
+    pageNo = widget.pageNo;
+    updateGurbaniLists(pageNo); //kro
     super.initState();
-    offset = widget.offset;
-    updateGurbaniLists(offset); //kro
-    GetIt.I<Database>()
-        .rawQuery(
-            'SELECT * FROM lines order by order_id LIMIT 10 OFFSET ${widget.offset}')
-        .then((value) {
-      value?.forEach((element) {
-        baaniLines.add(BaaniLineModel.fromJson(element));
-      });
-      setState(() {});
-    });
+    // setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    updateGurbaniLists(offset);
+    // updateGurbaniLists(pageNo);
 
     Size size = MediaQuery.sizeOf(context);
 
@@ -135,7 +104,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 onHorizontalDragEnd: (details) {
                   _flipKey.currentState?.stopFlip();
-                  updateGurbaniLists(offset + 10);//kro
+                  pageNo += 1;
+                  updateGurbaniLists(pageNo);//kro
+                  setState(() {});
 
                   //ni ho reha ruk reha inbetween
 

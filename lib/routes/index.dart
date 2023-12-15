@@ -11,7 +11,7 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const HomeScreen(offset: 0),
+      builder: (context, state) => const HomeScreen(pageNo: 1,),
     ),
    
    
