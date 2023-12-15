@@ -18,14 +18,14 @@ dependencies:
   flip_card: ^0.7.0
   flip_widget: ^0.1.11
 
-  get_it: ^7.6.4
+#  get_it: ^7.6.4
   go_router: ^11.1.2
   gurmukhi_utils:
   google_fonts: 6.1.0
   lottie: ^1.4.1
   sqflite: ^2.3.0  
   path_provider: ^2.0.15  
-  permission_handler: ^11.0.0 
+#  permission_handler: ^11.0.0
   
 
 dev_dependencies:

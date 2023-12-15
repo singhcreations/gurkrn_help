@@ -1,17 +1,8 @@
-import 'dart:io';
-import 'dart:isolate';
-import 'package:flutter_isolate/flutter_isolate.dart';
-import 'dart:typed_data';
-import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:permission_handler/permission_handler.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:gurbani_app/services/data_service.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -24,94 +15,20 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool initializingDatabase = false;
-  late ReceivePort receivePort;
-  late FlutterIsolate isolate;
 
-  Future<void> decompressAndLoadDatabase() async {
+  void callDataInit() async{
+    await DataService.instance.initDatabase();
     setState(() {
       initializingDatabase = true;
     });
-    ByteData data = await rootBundle.load("assets/database.zip");
-
-    receivePort = ReceivePort();
-    isolate = await FlutterIsolate.spawn(
-      _decompressDatabase,
-      {"data": data, "sendPort": receivePort.sendPort},
-    );
-  }
-
-  static void _decompressDatabase(Map<String, dynamic> args) async {
-    final ByteData data = args['data'];
-    final SendPort sendPort = args['sendPort'];
-
-    List<int> bytes =
-        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = "${documentsDirectory.path}/gurbani_database.sqlite";
-    File file = File("$path.zip");
-    await file.writeAsBytes(bytes, flush: true);
-
-    Archive archive = ZipDecoder().decodeBytes(await file.readAsBytes());
-    for (ArchiveFile archiveFile in archive) {
-      String fileName = archiveFile.name;
-      List<int> data = archiveFile.content;
-      File outFile = File("$path/$fileName");
-      outFile = await outFile.create(recursive: true);
-      await outFile.writeAsBytes(data, flush: true);
-    }
-
-    sendPort.send(1); // Finished decompression
-  }
-
-  Future<bool> checkDatabaseExists() async {
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = p.join(
-        documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
-    return File(path).exists();
-  }
-
-  Future _initDatabase() async {
-    final PermissionStatus status = await Permission.storage.request();
-    if (status.isGranted) {
-      // Now you can open the database
-      Directory documentsDirectory = await getApplicationDocumentsDirectory();
-      String path = p.join(
-          documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
-      Database db = await openDatabase(path, readOnly: false, version: 1);
-
-      //You can use this instance anywhere in the app...
-      GetIt.I.registerSingleton<Database>(db);
-    }
+    GoRouter.of(context).replace('/home');
   }
 
   @override
   void initState() {
+    // print("======================== on init ==================================");
     super.initState();
-
-    checkDatabaseExists().then((exists) async {
-      if (!exists) {
-        await decompressAndLoadDatabase();
-
-        receivePort.listen((message) async {
-          if (message == 1) {
-            isolate.kill();
-            receivePort.close();
-
-            //initialize database once its ready to use...
-            await _initDatabase();
-
-            GoRouter.of(context).replace('/home');
-          }
-        });
-      } else {
-        Future.delayed(const Duration(seconds: 2, milliseconds: 500), () async {
-          //initialize database when you know its already ready to use...
-          await _initDatabase();
-
-          GoRouter.of(context).replace('/home');
-        });
-      }
-    });
+    callDataInit();
   }
 
   @override
