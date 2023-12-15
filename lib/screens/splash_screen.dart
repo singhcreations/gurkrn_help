@@ -100,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
             //initialize database once its ready to use...
             await _initDatabase();
 
-            GoRouter.of(context).replace('/home');
+            GoRouter.of(context).replace('/sucess');
           }
         });
       } else {
@@ -108,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
           //initialize database when you know its already ready to use...
           await _initDatabase();
 
-          GoRouter.of(context).replace('/home');
+          GoRouter.of(context).replace('/sucess');
         });
       }
     });
