@@ -36,22 +36,23 @@ class _HomeScreenState extends State<HomeScreen> {
   List<BaaniLineModel> previousAng = List.empty(growable: true);
   List<BaaniLineModel> nextAng = List.empty(growable: true);
 
-  updateGurbaniLists(int pageNo) async {
+  Future<void> updateGurbaniLists(int pageNo) async {
     currentAng = await Reader.getAngs(pageNo: pageNo);
     nextAng = await Reader.getAngs(pageNo: pageNo + 1);
     previousAng = pageNo ==0 ? List<BaaniLineModel>.empty() : await Reader.getAngs(pageNo: pageNo - 1);
     baaniLines = currentAng;
-    // setState(() {});
+    setState(() {});
   }
 
   int pageNo = 1;
+  bool? isLeftToRight;
 
   Offset _oldPosition = Offset.zero;
   @override
   void initState() {
     pageNo = widget.pageNo;
-    updateGurbaniLists(pageNo); //kro
     super.initState();
+    updateGurbaniLists(pageNo); //kro
     // setState(() {});
   }
 
@@ -82,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: GestureDetector(
                 child: FlipWidget(
                   key: _flipKey,
-                  textureSize: size * 2,
+                  textureSize: size * 1,
                   // leftToRight: true, //
                   child: Container(
                     color: Colors.black,
@@ -101,12 +102,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   double percent = math.max(0, -off.dx / size.width * 1.4);
                   percent = percent - percent / 2 * (1 - 1 / tilt);
                   _flipKey.currentState?.flip(percent, tilt);
+                  if(details.primaryDelta! > 0){
+                    isLeftToRight = true;
+                  }else if(details.primaryDelta! < 0){
+                    isLeftToRight = false;
+                  }else{
+                    isLeftToRight = null;
+                  }
                 },
                 onHorizontalDragEnd: (details) {
                   _flipKey.currentState?.stopFlip();
-                  pageNo += 1;
-                  updateGurbaniLists(pageNo);//kro
-                  setState(() {});
+                  if(isLeftToRight == true){
+                    if(pageNo == 1){
+                      return;
+                    }
+                    pageNo -= 1;
+                  }else if(isLeftToRight == false){
+                    if(nextAng.isEmpty){
+                      return;
+                    }
+                    pageNo += 1;
+                  }
+                  if(isLeftToRight != null){
+                    updateGurbaniLists(pageNo);//kro
+                    setState(() {});
+                  }
 
                   //ni ho reha ruk reha inbetween
 

@@ -15,6 +15,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter_screenutil: ^5.9.0
   flutter_isolate: ^2.0.4
+  transliteration: ^0.0.6
   flip_card: ^0.7.0
   flip_widget: ^0.1.11
 
@@ -32,6 +33,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+
+dependency_overrides:
+  http: ^1.1.0
 
 flutter:
   uses-material-design: true

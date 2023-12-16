@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:gurbani_app/UI/ak.dart';
 import 'package:gurbani_app/screens/home_screen.dart';
 import 'package:gurbani_app/screens/splash_screen.dart';
 
@@ -31,10 +32,10 @@ final router = GoRouter(
     //   path: '/timeslot',
     //   builder: (context, state) => const TimeSlotSelectionScreen(),
     // ),
-    // GoRoute(
-    //   path: '/sucess',
-    //   builder: (context, state) => const SucessScreen(),
-    // ),
+    GoRoute(
+      path: '/sucess',
+      builder: (context, state) => const SucessScreen(),
+    ),
     // GoRoute(
     //   path: '/number',
     //   builder: (context, state) => const MyStepperScreen(),

@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gurbani_app/models/baani_lines_model.dart';
 import 'package:gurbani_app/utils/theme.dart';
 import 'package:gurmukhi_utils/gurmukhi_utils.dart';
@@ -16,6 +17,7 @@ class BaaniPageView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
         itemCount: baaniLines.length,
+        physics: const BouncingScrollPhysics(),
         itemBuilder: (context, index) {
           return Padding(
             padding: const EdgeInsets.all(8.0),
@@ -39,8 +41,8 @@ class BaaniPageView extends StatelessWidget {
                   style: baaniTextStyle(18),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(
-                  height: 10,
+                SizedBox(
+                  height: 5.h,
                 ),
                 // Text(baaniLines[index].pronunciationInformation,
                 //     textAlign: TextAlign.center, style: baaniTextStyle(10)),

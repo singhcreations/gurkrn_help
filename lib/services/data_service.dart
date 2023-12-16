@@ -26,6 +26,7 @@ class DataService {
         documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
     bool exists = await File(path).exists();
     if (!exists) {
+      // await _decompressDatabase();
       await decompressAndLoadDatabase();
     }
     _dataService._database = await openDatabase(path);
@@ -41,8 +42,10 @@ class DataService {
     );
 
     await for (var msg in receivePort) {
+      // print(msg);
       if (msg == 1) {
         isolate.kill();
+        receivePort.close();
         break;
       }
     }
@@ -50,6 +53,7 @@ class DataService {
 
   static void _decompressDatabase(Map<String, dynamic> args) async {
     final ByteData data = args['data'];
+    // ByteData data = await rootBundle.load("assets/database.zip");
     final SendPort sendPort = args['sendPort'];
 
     List<int> bytes =

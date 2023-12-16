@@ -17,11 +17,20 @@ class _SplashScreenState extends State<SplashScreen> {
   bool initializingDatabase = false;
 
   void callDataInit() async{
-    await DataService.instance.initDatabase();
     setState(() {
       initializingDatabase = true;
     });
-    GoRouter.of(context).replace('/home');
+    await DataService.instance.initDatabase();
+    setState(() {
+      initializingDatabase = false;
+    });
+    await Future.delayed(const Duration(microseconds: 100), () {
+      // setState(() {
+      //   initializingDatabase = false;
+      // });
+    // GoRouter.of(context).replace('/home');
+    GoRouter.of(context).replace('/sucess');
+    });
   }
 
   @override
