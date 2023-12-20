@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "690197927331",
+    "project_id": "dbcheck-45384",
+    "storage_bucket": "dbcheck-45384.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:690197927331:android:b5b1abcdc9004b41e47616",
+        "android_client_info": {
+          "package_name": "com.mehar.gurbani.gurbani_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDydSUw7DSWfwY_maX8ZVpu_j82SQIwtLM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -35,20 +35,20 @@ List<CustomModel> nitnemScreenList = [
 
 List<CustomModel> amritvelaWakeUpCallScreenList = [
   CustomModel(
-      title: "ITEM 1",
-      subTitle: "ITEM 1",
+      title: "Nitnem",
+      subTitle: "Nitnem",
       description:
-      "INSIDE THERE ARE ANOTHER LIST VIEW ON CLICK OF THAT WE WILL DISPLAY DATA "),
+      "INSIDE THERE ARE ANOTHER LIST VIEW Nitnem ON CLICK OF THAT WE WILL DISPLAY DATA "),
   CustomModel(
-      title: "ITEM 2",
-      subTitle: "ITEM 2",
-      description: "MAIN DATA JAISE AB DISPLAY KAR REHE HAI PART 1 "),
+      title: "Book One",
+      subTitle: "Book One",
+      description: "MAIN DATA For Book One "),
   CustomModel(
-      title: "ITEM 3",
-      subTitle: "ITEM 3 ",
-      description: "MAIN DATA JAISE AB DISPLAY KAR REHE HAI PART 2"),
+      title: "Book Two",
+      subTitle: "Book Two",
+      description: "MAIN DATA JFor Book Two"),
   CustomModel(
       title: "SEARCHING UI ",
-      subTitle: "ITEM 4",
+      subTitle: "Go to Search",
       description: "SEARCHING THE THINGS FROM DB"),
 ];

@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:gurbani_app/UI/MainListview.dart';
 import 'package:gurbani_app/UI/ak.dart';
 import 'package:gurbani_app/screens/home_screen.dart';
 import 'package:gurbani_app/screens/splash_screen.dart';
@@ -13,6 +14,10 @@ final router = GoRouter(
     GoRoute(
       path: '/home',
       builder: (context, state) => const HomeScreen(pageNo: 1,),
+    ),
+    GoRoute(
+      path: '/landing',
+      builder: (context, state) => const Listitems(),
     ),
    
    

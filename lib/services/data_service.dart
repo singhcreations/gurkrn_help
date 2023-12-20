@@ -21,7 +21,7 @@ class DataService {
   static DataService get instance => _dataService ;
 
   Future<void> initDatabase() async {
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    Directory documentsDirectory = await getApplicationSupportDirectory();
     String path = p.join(
         documentsDirectory.path, 'gurbani_database.sqlite/database.sqlite');
     bool exists = await File(path).exists();
@@ -32,7 +32,8 @@ class DataService {
     _dataService._database = await openDatabase(path);
   }
 
-  Future<void> decompressAndLoadDatabase() async {
+  @pragma('vm:entry-point')
+  static Future<void> decompressAndLoadDatabase() async {
     ByteData data = await rootBundle.load("assets/database.zip");
 
     ReceivePort receivePort = ReceivePort();
@@ -51,14 +52,16 @@ class DataService {
     }
   }
 
-  static void _decompressDatabase(Map<String, dynamic> args) async {
+  @pragma('vm:entry-point')
+  static Future<void> _decompressDatabase(Map<String, dynamic> args) async {
+  // static Future<void> _decompressDatabase() async {
     final ByteData data = args['data'];
     // ByteData data = await rootBundle.load("assets/database.zip");
     final SendPort sendPort = args['sendPort'];
 
     List<int> bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    Directory documentsDirectory = await getApplicationSupportDirectory();
     String path = "${documentsDirectory.path}/gurbani_database.sqlite";
     File file = File("$path.zip");
     await file.writeAsBytes(bytes, flush: true);

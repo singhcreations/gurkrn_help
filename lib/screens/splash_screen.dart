@@ -25,13 +25,10 @@ class _SplashScreenState extends State<SplashScreen> {
       initializingDatabase = false;
     });
     await Future.delayed(const Duration(microseconds: 100), () {
-      // setState(() {
-      //   initializingDatabase = false;
-      // });
-    // GoRouter.of(context).replace('/home');
-    GoRouter.of(context).replace('/sucess');
+      GoRouter.of(context).replace('/landing');
     });
   }
+
 
   @override
   void initState() {
@@ -92,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Please wait",
+                              "Please wait, initializing..",
                               style: TextStyle(
                                   fontFamily: "Montserrat-Regular",
                                   fontSize: 14.sp,

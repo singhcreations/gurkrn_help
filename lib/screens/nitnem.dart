@@ -1,8 +1,13 @@
-import 'package:gurbani_app/models/custom_model.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gurbani_app/models/nitnem_model.dart';
+import 'package:gurbani_app/screens/home_screen.dart';
+import 'package:gurbani_app/services/reader.dart';
 import 'package:gurbani_app/widgets/constraints.dart';
 import 'package:gurbani_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:gurbani_app/widgets/customnkwell.dart';
+import 'package:gurbani_app/widgets/helper.dart';
+import 'package:gurmukhi_utils/gurmukhi_utils.dart';
 
 
 class NitnemScreen extends StatefulWidget {
@@ -13,6 +18,21 @@ class NitnemScreen extends StatefulWidget {
 }
 
 class _NitnemScreenState extends State<NitnemScreen> {
+  List<NitnemModel>? nitnemList;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getNitnems();
+  }
+
+  getNitnems() async {
+    nitnemList = await Reader.getNitnems();
+    setState(() {
+
+    });
+  }
 
 
   @override
@@ -34,19 +54,19 @@ class _NitnemScreenState extends State<NitnemScreen> {
                   color: whiteColor,)),
             title: CustomText(
               title: "Nitnem Screen",
-              fontSize: 18,
+              fontSize: 18.sp,
               fontWeight: FontWeight.w600,
               color: whiteColor,
             ),
-            bottom: const TabBar(
+            bottom: TabBar(
               indicatorColor: whiteColor,
-              labelPadding: EdgeInsets.symmetric(horizontal: 30),
+              labelPadding: EdgeInsets.symmetric(horizontal: 30.w),
               isScrollable: true,
               tabs: [
                 Tab(child: Text(("Punjabi"),style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16.0,color: whiteColor))),
-                Tab(child: Text(("Hindi"),style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16.0,color: whiteColor))),
+                    fontWeight: FontWeight.bold, fontSize: 16.sp,color: whiteColor))),
+                Tab(child: Text(("English"),style: TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 16.sp,color: whiteColor))),
 
               ],
             ),
@@ -55,40 +75,41 @@ class _NitnemScreenState extends State<NitnemScreen> {
           body: TabBarView(
               children: [
                 ListView.builder(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    itemCount: nitnemScreenList.length,
+                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                    itemCount: nitnemList?.length ?? 0,
                     physics: ClampingScrollPhysics(),
                     itemBuilder: (context,index){
                       return Container(
-                        padding: EdgeInsets.only(bottom: 8,left: 16,right: 16),
-                        decoration: const BoxDecoration(
+                        padding: EdgeInsets.only(bottom: 8.h,left: 16.w,right: 16.w),
+                        decoration: BoxDecoration(
                           border: Border(
                               bottom: BorderSide(
-                                  width: 1,
+                                  width: 1.w,
                                   color: extraLightGreyColor
                               )
                           ),
                         ),
                         child: CustomInkWell(
                           onTap: () async {
-
+                            // print(nitnemList?[index].id);
+                            Helper.toScreen(context, HomeScreen(isNitnem: true, nitnemId: (nitnemList?[index].id) ?? 1,));
                           },
                           child: Container(
-                            height: 50,
-                            padding: EdgeInsets.only(top: 5),
+                            height: 50.h,
+                            padding: EdgeInsets.only(top: 5.h),
                             child: Row(
                               children: [
                                 Expanded(
                                     child: Container(
-                                      padding: EdgeInsets.only(left: 2,top: 5,bottom: 0),
+                                      padding: EdgeInsets.only(left: 2.w,top: 5.h,bottom: 0),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           //title
                                           CustomText(
-                                            title: nitnemScreenList[index].title,
-                                            fontSize: 18,
+                                            title: asciiToGurmukhi(nitnemList?[index].gurmukhi ?? ""),
+                                            fontSize: 18.sp,
                                             fontWeight: FontWeight.w600,
                                             color: blackColor,
                                           ) ,
@@ -102,12 +123,12 @@ class _NitnemScreenState extends State<NitnemScreen> {
                       );
                     }),
                 ListView.builder(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    itemCount: nitnemScreenList.length,
+                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                    itemCount: nitnemList?.length ?? 0,
                     physics: ClampingScrollPhysics(),
                     itemBuilder: (context,index){
                       return Container(
-                        padding: EdgeInsets.only(bottom: 8,left: 16,right: 16),
+                        padding: EdgeInsets.only(bottom: 8.h,left: 16.w,right: 16.w),
                         decoration: const BoxDecoration(
                           border: Border(
                               bottom: BorderSide(
@@ -118,23 +139,24 @@ class _NitnemScreenState extends State<NitnemScreen> {
                         ),
                         child: CustomInkWell(
                           onTap: () async {
+                            Helper.toScreen(context, HomeScreen(isNitnem: true, nitnemId: (nitnemList?[index].id) ?? 1,));
                           },
                           child: Container(
-                            height: 50,
-                            padding: EdgeInsets.only(top: 5),
+                            height: 50.h,
+                            padding: EdgeInsets.only(top: 5.h),
                             child: Row(
                               children: [
                                 Expanded(
                                     child: Container(
-                                      padding: EdgeInsets.only(left: 2,top: 5,bottom: 0),
+                                      padding: EdgeInsets.only(left: 2.w,top: 5.h,bottom: 0),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           //title
                                           CustomText(
-                                            title: nitnemScreenList[index].subTitle,
-                                            fontSize: 18,
+                                            title: nitnemList?[index].english ?? "",
+                                            fontSize: 18.sp,
                                             fontWeight: FontWeight.w700,
                                             color: blackColor,
                                           ) ,
