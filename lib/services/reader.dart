@@ -133,6 +133,7 @@ class Reader{
       return value[0]['COUNT(*)'] as int;
     });
     // print(count);
+
     var result = await DataService.database.rawQuery("""
       SELECT
     lines.*,
@@ -146,17 +147,13 @@ class Reader{
     MAX(CASE WHEN translations.translation_source_id = 5 THEN translations.translation END) AS translation_faridkot_teeka,
     MAX(CASE WHEN translations.translation_source_id = 6 THEN translations.translation END) AS translation_punjabi_teeka
 FROM
-    bani_lines
-JOIN
-    lines ON lines.id = bani_lines.line_id
+    (SELECT * FROM lines WHERE lines.id IN (SELECT bani_lines.line_id FROM bani_lines WHERE bani_lines.bani_id = $nitnemId)) AS lines
 LEFT JOIN
     transliterations ON lines.id = transliterations.line_id
 LEFT JOIN
     languages ON transliterations.language_id = languages.id
 LEFT JOIN
     translations ON lines.id = translations.line_id
-WHERE
-    bani_lines.bani_id = $nitnemId
 GROUP BY
     lines.id, lines.shabad_id, lines.source_page, lines.source_line, lines.first_letters,
     lines.vishraam_first_letters, lines.gurmukhi, lines.pronunciation,
@@ -181,7 +178,7 @@ ORDER BY
       return value[0]['COUNT(*)'] as int;
     });
     // print(count);
-    var result = await DataService.database.rawQuery("""
+    String theQuery = """
       SELECT
     lines.*,
     MAX(CASE WHEN languages.name_english = 'English' THEN transliterations.transliteration END) AS english_transliteration,
@@ -194,7 +191,7 @@ ORDER BY
     MAX(CASE WHEN translations.translation_source_id = 5 THEN translations.translation END) AS translation_faridkot_teeka,
     MAX(CASE WHEN translations.translation_source_id = 6 THEN translations.translation END) AS translation_punjabi_teeka
 FROM
-    (SELECT * FROM lines WHERE lines.source_page = $sourcePageNo ${loadSourceLines ? "" : " AND ${getBookRange(bookNo)}"} ORDER BY lines.order_id asc ${loadSourceLines ? "" : "LIMIT $lines OFFSET ${(pageNo - 1) * lines}"}) AS lines
+    (SELECT * FROM lines WHERE lines.source_page = $sourcePageNo AND ${getBookRange(bookNo)} ORDER BY lines.order_id asc ${loadSourceLines ? "" : "LIMIT $lines OFFSET ${(pageNo - 1) * lines}"}) AS lines
 LEFT JOIN
     transliterations ON lines.id = transliterations.line_id
 LEFT JOIN
@@ -207,7 +204,9 @@ GROUP BY
     lines.pronunciation_information, lines.type_id, lines.order_id
 ORDER by
 	lines.order_id;
-    """)
+    """;
+    // print(theQuery);
+    var result = await DataService.database.rawQuery(theQuery)
     .then((value) {
       List<BaaniLineModel> baaniLines = List.empty(growable: true);
       value?.forEach((element) {

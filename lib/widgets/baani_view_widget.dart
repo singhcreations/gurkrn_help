@@ -19,6 +19,8 @@ class BaaniPageView extends StatelessWidget {
   final int pageNo;
   final int totalPages;
   final int linesPerPage;
+  final bool isLoading;
+  final bool showAng;
   const BaaniPageView({
     super.key,
     required this.baaniLines,
@@ -33,6 +35,8 @@ class BaaniPageView extends StatelessWidget {
     this.showHindiTranslation = false,
     this.showHindiTeekaTranslation = false,
     this.language = Languages.Gurmukhi,
+    this.isLoading = false,
+    this.showAng = true,
   });
 
   final DBResult baaniLines;
@@ -40,7 +44,9 @@ class BaaniPageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // print(MediaQuery.of(context).size.height);
-    return baaniLines.count == 0 ? Center(
+    return isLoading ? Center(
+      child: CircularProgressIndicator(),
+    ) : baaniLines.count == 0 ? Center(
       child: Text('------------- End of Baani ---------------'),
     ) : ListView.builder(
         itemCount: baaniLines.baaniLines.length,
@@ -53,10 +59,10 @@ class BaaniPageView extends StatelessWidget {
                 index == 0
                     ? Row(
                         children: [
-                          Text(
+                          showAng ? Text(
                             'Ang: ${baaniLines.baaniLines[index].sourcePage}',
                             style: baaniTextStyle(12.sp),
-                          ),
+                          ) : Container(),
                           Spacer(),
                           Text(
                             '$pageNo/$totalPages',
@@ -68,7 +74,7 @@ class BaaniPageView extends StatelessWidget {
                 SizedBox(
                   height: 10.h,
                 ),
-                showEnglishTransliteration
+                showEnglishTransliteration && baaniLines.baaniLines[index].englishTransliteration != null
                     ? Text(
                         baaniLines.baaniLines[index].englishTransliteration ?? '',
                         style: baaniTextStyle(12.sp),
@@ -78,7 +84,7 @@ class BaaniPageView extends StatelessWidget {
                 SizedBox(
                   height: 1.h,
                 ),
-                showEnglishTranslation
+                showEnglishTranslation && baaniLines.baaniLines[index].translationEnglish != null
                     ? Text(
                         baaniLines.baaniLines[index].translationEnglish ?? '',
                         style: baaniTextStyle(12.sp),
@@ -88,7 +94,7 @@ class BaaniPageView extends StatelessWidget {
                 SizedBox(
                   height: 1.h,
                 ),
-                showPunjabiTranslation
+                showPunjabiTranslation && baaniLines.baaniLines[index].translationPunjabi != null
                     ? Text(
                         baaniLines.baaniLines[index].translationPunjabi ?? "",
                         style: baaniTextStyle(12.sp),
@@ -98,7 +104,7 @@ class BaaniPageView extends StatelessWidget {
                 SizedBox(
                   height: 1.h,
                 ),
-                showPunjabiTeekaTranslation
+                showPunjabiTeekaTranslation && baaniLines.baaniLines[index].translationPunjabiTeeka != null
                     ? Text(
                         baaniLines.baaniLines[index].translationPunjabiTeeka ?? "",
                         style: baaniTextStyle(12.sp),
@@ -108,7 +114,7 @@ class BaaniPageView extends StatelessWidget {
                 SizedBox(
                   height: 1.h,
                 ),
-                showFaridkotTeekaTranslation
+                showFaridkotTeekaTranslation && baaniLines.baaniLines[index].translationFaridkotTeeka != null
                     ? Text(
                         baaniLines.baaniLines[index].translationFaridkotTeeka ?? "",
                         style: baaniTextStyle(12.sp),
@@ -118,7 +124,7 @@ class BaaniPageView extends StatelessWidget {
                 SizedBox(
                   height: 1.h,
                 ),
-                showHindiTranslation
+                showHindiTranslation && baaniLines.baaniLines[index].translationHindi != null
                     ? Text(
                         baaniLines.baaniLines[index].translationHindi ?? "",
                         style: baaniTextStyle(12.sp),
@@ -128,7 +134,7 @@ class BaaniPageView extends StatelessWidget {
                 SizedBox(
                   height: 1.h,
                 ),
-                showHindiTeekaTranslation
+                showHindiTeekaTranslation && baaniLines.baaniLines[index].translationHindiTeeka != null
                     ? Text(
                         baaniLines.baaniLines[index].translationHindiTeeka ?? "",
                         style: baaniTextStyle(12.sp),

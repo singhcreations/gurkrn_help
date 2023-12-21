@@ -64,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Languages _language = Languages.Gurmukhi;
 
   Future<void> updateGurbaniLists() async {
-    // print(_linesPerPage);
     currentAng = await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo, loadSourceLines: _loadSourceLines, lines: _linesPerPage, bookNo: _bookNo);
     if(currentAng.baaniLines.isEmpty){
       if(_loadSourceLines){
@@ -81,6 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
       currentAng = await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo, lines: _linesPerPage, bookNo: _bookNo);
     }else{
       if(_loadSourceLines){
+        setState(() {
+
+        });
         return;
       }
     }
@@ -92,7 +94,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> updateNitnemLists() async {
     // print(_linesPerPage);
     if(currentAng.count ==0){
+      setState(() {
+        _isLoading = true;
+      });
       currentAng = await Reader.getNitnemAngs(nitnemId: _nitnemId);
+      setState(() {
+        _isLoading = false;
+      });
     }
     // currentAng = await Reader.getNitnemAngs(nitnemId: _nitnemId);
     if(currentAng.baaniLines.isEmpty){
@@ -117,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _bookNo = 1;
   bool _isNitnem = false;
   int _nitnemId = 1;
+  bool _isLoading = false;
   bool? isLeftToRight;
   List<int> _previousChapterTotalPages = <int>[];
 
@@ -205,10 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     Size size = MediaQuery.sizeOf(context);
     // print(MediaQuery.of(context).size.height);
-    print((_pageNo)*_linesPerPage);
-    print((_pageNo+1)*_linesPerPage);
-    print(currentAng.baaniLines.length);
-
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -384,7 +389,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     showFaridkotTeekaTranslation: _showFaridkotTeekaTranslation,
                     showHindiTranslation: _showHindiTranslation,
                     showHindiTeekaTranslation: _showHindiTeekaTranslation,
-                    language: _language
+                    language: _language,
+                  isLoading: _isLoading,
+                  showAng: _isNitnem ? false : true,
                 ),
               ),
             ),
@@ -406,11 +413,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: BaaniPageView(
                           baaniLines: _loadSourceLines || _isNitnem ?
                                       currentAng.baaniLines.length < _pageNo*_linesPerPage ?
-                                      DBResult(baaniLines: List.empty(), count: 0) :
+                                          _pageNo >1 ?
+                                            DBResult(
+                                                baaniLines: currentAng.baaniLines.sublist(
+                                                    (_pageNo-1)*_linesPerPage,
+                                                    (_pageNo)*_linesPerPage >= currentAng.baaniLines.length ?
+                                                      currentAng.baaniLines.length :
+                                                      _pageNo*_linesPerPage
+                                                ),
+                                                count: _linesPerPage
+                                            ) :
+                                            DBResult(baaniLines: List.empty(), count: 0) :
                                       DBResult(
                                           baaniLines: currentAng.baaniLines.sublist(
                                               (_pageNo-1)*_linesPerPage,
-                                              (_pageNo-1)*_linesPerPage >= currentAng.baaniLines.length ?
+                                              (_pageNo)*_linesPerPage >= currentAng.baaniLines.length ?
                                                 currentAng.baaniLines.length :
                                                 _pageNo*_linesPerPage
                                           ),
@@ -426,7 +443,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           showFaridkotTeekaTranslation: _showFaridkotTeekaTranslation,
                           showHindiTranslation: _showHindiTranslation,
                           showHindiTeekaTranslation: _showHindiTeekaTranslation,
-                          language: _language
+                          language: _language,
+                        isLoading: _isLoading,
+                        showAng: _isNitnem ? false : true,
                       ),
                     ),
                   ),
@@ -460,15 +479,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       _previousChapterTotalPages.removeLast();
                     }else if(_sourcePageNo >=1 && _pageNo >= 1){
                       _pageNo -= 1;
+                      // print(_pageNo);
                     }
                   }else if(isLeftToRight == false){
                     _pageNo += 1;
                   }
                   if(isLeftToRight != null){
                     if(_isNitnem){
+                      if(currentAng.baaniLines.length - (_linesPerPage * (_pageNo)) <0){
+                        _pageNo = (currentAng.baaniLines.length/_linesPerPage).ceil();
+                        // return;
+                      }
 
                       updateNitnemLists();
                     }else{
+                      if(_loadSourceLines){
+                        if((currentAng.baaniLines.length - (_linesPerPage * (_pageNo)) <0) && (currentAng.baaniLines.length - (_linesPerPage * (_pageNo-1)) <=0)){
+                          _pageNo = 1;
+                          _sourcePageNo += 1;
+                          // return;
+                        }
+                        // updateGurbaniLists();
+                        // return;
+                      }
                       updateGurbaniLists();//kro
                     }
                     setState(() {});
