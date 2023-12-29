@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gurbani_app/models/baani_lines_model.dart';
 import 'package:gurbani_app/models/db_result.dart';
 import 'package:gurbani_app/utils/languages.dart';
+import 'package:gurbani_app/utils/spans.dart';
 import 'package:gurbani_app/utils/theme.dart';
 import 'package:gurmukhi_utils/gurmukhi_utils.dart';
 
@@ -21,6 +22,9 @@ class BaaniPageView extends StatelessWidget {
   final int linesPerPage;
   final bool isLoading;
   final bool showAng;
+  final bool showPageNo;
+  final BaaniLineModel? searchedLine;
+
   const BaaniPageView({
     super.key,
     required this.baaniLines,
@@ -37,7 +41,9 @@ class BaaniPageView extends StatelessWidget {
     this.language = Languages.Gurmukhi,
     this.isLoading = false,
     this.showAng = true,
-  });
+    this.showPageNo = true,
+    this.searchedLine,
+  }) ;
 
   final DBResult baaniLines;
 
@@ -59,110 +65,118 @@ class BaaniPageView extends StatelessWidget {
                 index == 0
                     ? Row(
                         children: [
-                          showAng ? Text(
-                            'Ang: ${baaniLines.baaniLines[index].sourcePage}',
-                            style: baaniTextStyle(12.sp),
+                          showAng ? RichText(
+                            text: getSpan('Ang: ${baaniLines.baaniLines[index].sourcePage}', style: baaniTextStyle(fontSize:12)),
                           ) : Container(),
                           Spacer(),
-                          Text(
-                            '$pageNo/$totalPages',
-                            style: baaniTextStyle(12.sp),
-                          ),
+                          showPageNo ? RichText(
+                            text: getSpan('$pageNo/$totalPages', style: baaniTextStyle(fontSize:12)),
+                          ): Container(),
                         ],
                       )
                     : Container(),
                 SizedBox(
                   height: 10.h,
                 ),
-                showEnglishTransliteration && baaniLines.baaniLines[index].englishTransliteration != null
-                    ? Text(
-                        baaniLines.baaniLines[index].englishTransliteration ?? '',
-                        style: baaniTextStyle(12.sp),
-                        textAlign: TextAlign.center,
-                      )
-                    : Container(),
-                SizedBox(
-                  height: 1.h,
-                ),
-                showEnglishTranslation && baaniLines.baaniLines[index].translationEnglish != null
-                    ? Text(
-                        baaniLines.baaniLines[index].translationEnglish ?? '',
-                        style: baaniTextStyle(12.sp),
-                        textAlign: TextAlign.center,
-                      )
-                    : Container(),
-                SizedBox(
-                  height: 1.h,
-                ),
-                showPunjabiTranslation && baaniLines.baaniLines[index].translationPunjabi != null
-                    ? Text(
-                        baaniLines.baaniLines[index].translationPunjabi ?? "",
-                        style: baaniTextStyle(12.sp),
-                        textAlign: TextAlign.center,
-                      )
-                    : Container(),
-                SizedBox(
-                  height: 1.h,
-                ),
-                showPunjabiTeekaTranslation && baaniLines.baaniLines[index].translationPunjabiTeeka != null
-                    ? Text(
-                        baaniLines.baaniLines[index].translationPunjabiTeeka ?? "",
-                        style: baaniTextStyle(12.sp),
-                        textAlign: TextAlign.center,
-                      )
-                    : Container(),
-                SizedBox(
-                  height: 1.h,
-                ),
-                showFaridkotTeekaTranslation && baaniLines.baaniLines[index].translationFaridkotTeeka != null
-                    ? Text(
-                        baaniLines.baaniLines[index].translationFaridkotTeeka ?? "",
-                        style: baaniTextStyle(12.sp),
-                        textAlign: TextAlign.center,
-                      )
-                    : Container(),
-                SizedBox(
-                  height: 1.h,
-                ),
-                showHindiTranslation && baaniLines.baaniLines[index].translationHindi != null
-                    ? Text(
-                        baaniLines.baaniLines[index].translationHindi ?? "",
-                        style: baaniTextStyle(12.sp),
-                        textAlign: TextAlign.center,
-                      )
-                    : Container(),
-                SizedBox(
-                  height: 1.h,
-                ),
-                showHindiTeekaTranslation && baaniLines.baaniLines[index].translationHindiTeeka != null
-                    ? Text(
-                        baaniLines.baaniLines[index].translationHindiTeeka ?? "",
-                        style: baaniTextStyle(12.sp),
-                        textAlign: TextAlign.center,
-                      )
-                    : Container(),
-                SizedBox(
-                  height: 1.h,
-                ),
-                language == Languages.Gurmukhi ? Text(
-                  asciiToGurmukhi(baaniLines.baaniLines[index].gurmukhi),
-                  style: baaniTextStyle(16.sp),
+                showEnglishTransliteration && baaniLines.baaniLines[index].englishTransliteration != null ? RichText(
+                  text: getSpan(
+                    baaniLines.baaniLines[index].englishTransliteration,
+                    style: baaniTextStyle(),
+                  ),
                   textAlign: TextAlign.center,
-                ) : language == Languages.Hindi ? Text(
-                  asciiToGurmukhi(baaniLines.baaniLines[index].hindiTransliteration ?? ""),
-                  style: baaniTextStyle(16.sp),
+                ): Container(),
+                SizedBox(
+                  height: 1.h,
+                ),
+                showEnglishTranslation && baaniLines.baaniLines[index].translationEnglish != null ? RichText(
+                  text: getSpan(
+                    baaniLines.baaniLines[index].translationEnglish ?? "",
+                    style: baaniTextStyle(),
+                  ),
+                  textAlign: TextAlign.center,
+                ) : Container(),
+                SizedBox(
+                  height: 1.h,
+                ),
+                showPunjabiTranslation && baaniLines.baaniLines[index].translationPunjabi != null ? RichText(
+                  text: getSpan(
+                    baaniLines.baaniLines[index].translationPunjabi ?? "",
+                    style: baaniTextStyle(),
+                  ),
+                  textAlign: TextAlign.center,
+                ) : Container(),
+                SizedBox(
+                  height: 1.h,
+                ),
+                showPunjabiTeekaTranslation && baaniLines.baaniLines[index].translationPunjabiTeeka != null ? RichText(
+                  text: getSpan(
+                    baaniLines.baaniLines[index].translationPunjabiTeeka ?? "",
+                    style: baaniTextStyle(),
+                  ),
+                  textAlign: TextAlign.center,
+                ) : Container(),
+                SizedBox(
+                  height: 1.h,
+                ),
+                showFaridkotTeekaTranslation && baaniLines.baaniLines[index].translationFaridkotTeeka != null ? RichText(
+                  text: getSpan(
+                    baaniLines.baaniLines[index].translationFaridkotTeeka ?? "",
+                    style: baaniTextStyle(),
+                  ),
+                  textAlign: TextAlign.center,
+                ) : Container(),
+                SizedBox(
+                  height: 1.h,
+                ),
+                showHindiTranslation && baaniLines.baaniLines[index].translationHindi != null ? RichText(
+                  text: getSpan(
+                    baaniLines.baaniLines[index].translationHindi ?? "",
+                    style: baaniTextStyle(),
+                  ),
+                  textAlign: TextAlign.center,
+                ) : Container(),
+                SizedBox(
+                  height: 1.h,
+                ),
+                showHindiTeekaTranslation && baaniLines.baaniLines[index].translationHindiTeeka != null ? RichText(
+                  text: getAsscciiSpan(
+                    baaniLines.baaniLines[index].translationHindiTeeka,
+                    style: baaniTextStyle(),
+                  ),
+                  textAlign: TextAlign.center,
+                ) : Container(),
+                SizedBox(
+                  height: 1.h,
+                ),
+                language == Languages.Gurmukhi ? RichText(
+                  text: getAsscciiSpan(baaniLines.baaniLines[index].gurmukhi,
+                  style: baaniTextStyle(
+                    color: searchedLine?.orderId == baaniLines.baaniLines[index].orderId ? Colors.white : null, backgroundColor: searchedLine?.orderId == baaniLines.baaniLines[index].orderId ? Colors.red : null),
+                    ),
+                  textAlign: TextAlign.center,
+                  // key: searchedLine?.orderId == baaniLines.baaniLines[index].orderId ? scrollKey : null,
+                ) : language == Languages.Hindi ? RichText(
+                  text: getAsscciiSpan(
+                    baaniLines.baaniLines[index].hindiTransliteration,
+                    style: baaniTextStyle(),
+                  ),
                   textAlign: TextAlign.center,
                 ) : language == Languages.Both ? Column(
                   children: [
-                    Text(
-                      asciiToGurmukhi(baaniLines.baaniLines[index].hindiTransliteration ?? ""),
-                      style: baaniTextStyle(16.sp),
+                    RichText(
+                      text: getAsscciiSpan(
+                        baaniLines.baaniLines[index].hindiTransliteration,
+                        style: baaniTextStyle(),
+                      ),
                       textAlign: TextAlign.center,
                     ),
-                    Text(
-                      asciiToGurmukhi(baaniLines.baaniLines[index].gurmukhi),
-                      style: baaniTextStyle(16.sp),
+                    RichText(
+                      text: getAsscciiSpan(baaniLines.baaniLines[index].gurmukhi,
+                        style: baaniTextStyle(
+                            color: searchedLine?.orderId == baaniLines.baaniLines[index].orderId ? Colors.white : null, backgroundColor: searchedLine?.orderId == baaniLines.baaniLines[index].orderId ? Colors.red : null),
+                      ),
                       textAlign: TextAlign.center,
+                      // key: searchedLine?.orderId == baaniLines.baaniLines[index].orderId ? scrollKey : null,
                     ),
                   ],
                 ) : Container(),
@@ -176,4 +190,5 @@ class BaaniPageView extends StatelessWidget {
           );
         });
   }
+
 }

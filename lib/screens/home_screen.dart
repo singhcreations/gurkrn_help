@@ -1,12 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gurbani_app/models/baani_lines_model.dart';
+import 'package:gurbani_app/models/calculated_items.dart';
 import 'package:gurbani_app/models/db_result.dart';
 import 'package:gurbani_app/services/reader.dart';
 import 'package:gurbani_app/utils/languages.dart';
+import 'package:gurbani_app/utils/spans.dart';
+import 'package:gurbani_app/utils/theme.dart';
 import 'package:gurbani_app/widgets/baani_view_widget.dart';
 import 'dart:math' as math;
 
 import 'package:flip_widget/flip_widget.dart';
+import 'package:gurbani_app/widgets/calculated_view_widget.dart';
+import 'package:gurbani_app/widgets/constraints.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 //ToDo: This class has to be renamed because this won't be the homescreen
 
@@ -29,7 +38,11 @@ class HomeScreen extends StatefulWidget {
   final int bookNo;
   final bool isNitnem;
   final int nitnemId;
-  const HomeScreen({super.key, this.pageNo = 1, this.bookNo = 1, this.isNitnem = false, this.nitnemId = 1});
+  final bool searchView;
+  final int searchedAng;
+  final String? title;
+  final BaaniLineModel? searchedBaaniLine;
+  const HomeScreen({super.key, this.title, this.pageNo = 1, this.bookNo = 1, this.isNitnem = false, this.searchView=false, this.nitnemId = 1, this.searchedAng = 1, this.searchedBaaniLine});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -49,10 +62,13 @@ double _clampMin(double v) {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<FlipWidgetState> _flipKey = GlobalKey();
+  final GlobalKey myPageKey = GlobalKey();
 
   DBResult currentAng = DBResult(baaniLines: List.empty(), count: 0);
   DBResult previousAng = DBResult(baaniLines: List.empty(), count: 0);
   DBResult nextAng = DBResult(baaniLines: List.empty(), count: 0);
+  DBResult searchedAng = DBResult(baaniLines: List.empty(), count: 0);
+  List<CalculatedItems> calculatedPages = <CalculatedItems>[];
   bool _showEnglishTransliteration = false;
   bool _showEnglishTranslation = true;
   bool _showPunjabiTranslation = true;
@@ -61,7 +77,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showHindiTeekaTranslation = false;
   bool _showFaridkotTeekaTranslation = false;
   bool _loadSourceLines = true;
+  bool _isBookMarked = false;
   Languages _language = Languages.Gurmukhi;
+  double _extraBottomPadding = 0;
+  late Size size;
 
   Future<void> updateGurbaniLists() async {
     currentAng = await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo, loadSourceLines: _loadSourceLines, lines: _linesPerPage, bookNo: _bookNo);
@@ -69,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if(_loadSourceLines){
         currentAng = DBResult(baaniLines: List.empty(), count: 0);
         nextAng = DBResult(baaniLines: List.empty(), count: 0);
+        placeWidgetsToPage();
         setState(() {
 
         });
@@ -78,38 +98,412 @@ class _HomeScreenState extends State<HomeScreen> {
       _previousChapterTotalPages.add(_pageNo > 1? _pageNo-1 :1);
       _pageNo = 1;
       currentAng = await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo, lines: _linesPerPage, bookNo: _bookNo);
+      // placeWidgetsToPage();
     }else{
       if(_loadSourceLines){
+        placeWidgetsToPage();
         setState(() {
 
         });
         return;
       }
     }
+    // print("=================================");
+    placeWidgetsToPage();
     nextAng = await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo + 1, lines: _linesPerPage, bookNo: _bookNo);
     previousAng = _sourcePageNo ==1 && _pageNo ==1 ? DBResult(baaniLines: List.empty(), count: 0) : _sourcePageNo >=1 && _pageNo ==1 ? _previousChapterTotalPages.isEmpty ? DBResult(baaniLines: List.empty(), count: 0) : await Reader.getAngs(sourcePageNo: _sourcePageNo - 1,pageNo: _previousChapterTotalPages.last, lines: _linesPerPage) : await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo - 1, lines: _linesPerPage);
-    setState(() {});
+    setState(() {
+      // print("calcualated");
+      // print(calculatedPages.length);
+    });
+  }
+
+  double _getAppbarAndStatusBarHeight(){
+    return AppBar().preferredSize.height + MediaQuery.of(context).padding.top + MediaQuery.of(context).padding.bottom + _extraBottomPadding;
+  }
+
+  placeWidgetsToPage(){
+    if(currentAng.baaniLines.isEmpty){
+      return;
+    }
+    calculatedPages.clear();
+    TextSpan angSpan = getSpan("Ang", style: baaniTextStyle(fontSize: 12));
+    double height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+    double additionalHeight = 7.h;
+    height += additionalHeight;
+    CalculatedItems calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: 0, totalPages: 0, angNo: _sourcePageNo);
+    currentAng.baaniLines.forEach((element) {
+      if(_showEnglishTransliteration && element.englishTransliteration != null && element.englishTransliteration!.isNotEmpty){
+        TextSpan span = getSpan(element.englishTransliteration, style: baaniTextStyle());
+        if(height + _getAppbarAndStatusBarHeight() + getTextHeight(span: span, maxWidth: size.width-2*8.w) > size.height){
+          calculatedItems.pageNo += 1;
+          calculatedItems.totalPages += 1;
+          calculatedPages.add(calculatedItems);
+          height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+          calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: calculatedItems.pageNo, totalPages: calculatedItems.totalPages, angNo: _sourcePageNo);
+          height += additionalHeight;
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+        }else{
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+          height += additionalHeight;
+          printSizes(height);
+        }
+      }
+
+      if(_showEnglishTranslation && element.translationEnglish != null && element.translationEnglish!.isNotEmpty){
+        TextSpan span = getSpan(element.translationEnglish , style: baaniTextStyle());
+        if(height + _getAppbarAndStatusBarHeight() + getTextHeight(span: span, maxWidth: size.width-2*8.w) > size.height){
+          calculatedItems.pageNo += 1;
+          calculatedItems.totalPages += 1;
+          calculatedPages.add(calculatedItems);
+          height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+          calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: calculatedItems.pageNo, totalPages: calculatedItems.totalPages, angNo: _sourcePageNo);
+          height += additionalHeight;
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+        }else{
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+          height += additionalHeight;
+          printSizes(height);
+        }
+      }
+
+      if(_showPunjabiTranslation && element.translationPunjabi != null && element.translationPunjabi!.isNotEmpty){
+        TextSpan span = getAsscciiSpan(element.translationPunjabi , style: baaniTextStyle());
+        if(height + _getAppbarAndStatusBarHeight() + getTextHeight(span: span, maxWidth: size.width-2*8.w) > size.height){
+          calculatedItems.pageNo += 1;
+          calculatedItems.totalPages += 1;
+          calculatedPages.add(calculatedItems);
+          height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+          calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: calculatedItems.pageNo, totalPages: calculatedItems.totalPages, angNo: _sourcePageNo);
+          height += additionalHeight;
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+        }else{
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+          height += additionalHeight;
+          printSizes(height);
+        }
+      }
+
+      if(_showPunjabiTeekaTranslation && element.translationPunjabiTeeka != null && element.translationPunjabiTeeka!.isNotEmpty){
+        TextSpan span = getAsscciiSpan(element.translationPunjabiTeeka , style: baaniTextStyle());
+        if(height + _getAppbarAndStatusBarHeight() + getTextHeight(span: span, maxWidth: size.width-2*8.w) > size.height){
+          calculatedItems.pageNo += 1;
+          calculatedItems.totalPages += 1;
+          calculatedPages.add(calculatedItems);
+          height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+          calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: calculatedItems.pageNo, totalPages: calculatedItems.totalPages, angNo: _sourcePageNo);
+          height += additionalHeight;
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+        }else{
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+          height += additionalHeight;
+          printSizes(height);
+        }
+      }
+
+      if(_showFaridkotTeekaTranslation && element.translationFaridkotTeeka != null && element.translationFaridkotTeeka!.isNotEmpty){
+        TextSpan span = getAsscciiSpan(element.translationFaridkotTeeka , style: baaniTextStyle());
+        if(height + _getAppbarAndStatusBarHeight() + getTextHeight(span: span, maxWidth: size.width-2*8.w) > size.height){
+          calculatedItems.pageNo += 1;
+          calculatedItems.totalPages += 1;
+          calculatedPages.add(calculatedItems);
+          height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+          calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: calculatedItems.pageNo, totalPages: calculatedItems.totalPages, angNo: _sourcePageNo);
+          height += additionalHeight;
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+        }else{
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+          height += additionalHeight;
+          printSizes(height);
+        }
+      }
+
+      if(_showHindiTranslation && element.translationHindi != null && element.translationHindi!.isNotEmpty){
+        TextSpan span = getAsscciiSpan(element.translationHindi , style: baaniTextStyle());
+        if(height + _getAppbarAndStatusBarHeight() + getTextHeight(span: span, maxWidth: size.width-2*8.w) > size.height){
+          calculatedItems.pageNo += 1;
+          calculatedItems.totalPages += 1;
+          calculatedPages.add(calculatedItems);
+          height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+          calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: calculatedItems.pageNo, totalPages: calculatedItems.totalPages, angNo: _sourcePageNo);
+          height += additionalHeight;
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+        }else{
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+          height += additionalHeight;
+          printSizes(height);
+        }
+      }
+
+      if(_showHindiTeekaTranslation && element.translationHindiTeeka != null && element.translationHindiTeeka!.isNotEmpty){
+        TextSpan span = getAsscciiSpan(element.translationHindiTeeka , style: baaniTextStyle());
+        if(height + _getAppbarAndStatusBarHeight() + getTextHeight(span: span, maxWidth: size.width-2*8.w) > size.height){
+          calculatedItems.pageNo += 1;
+          calculatedItems.totalPages += 1;
+          calculatedPages.add(calculatedItems);
+          height = getTextHeight(span: angSpan, maxWidth: size.width-2*8.w);
+          calculatedItems = CalculatedItems(textSpans: List.empty(growable: true), pageNo: calculatedItems.pageNo, totalPages: calculatedItems.totalPages, angNo: _sourcePageNo);
+          height += additionalHeight;
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+        }else{
+          height += getTextHeight(span: span, maxWidth: size.width-2*8.w);
+          calculatedItems.textSpans.add(span);
+          height += additionalHeight;
+          printSizes(height);
+        }
+      }
+
+      if(_language == Languages.Both) {
+        if(element.gurmukhi.isNotEmpty){
+          TextSpan span =
+              getAsscciiSpan(element.gurmukhi, style: baaniTextStyle());
+          if (height +
+                  _getAppbarAndStatusBarHeight() +
+                  getTextHeight(span: span, maxWidth: size.width - 2 * 8.w) >
+              size.height) {
+            calculatedItems.pageNo += 1;
+            calculatedItems.totalPages += 1;
+            calculatedPages.add(calculatedItems);
+            height =
+                getTextHeight(span: angSpan, maxWidth: size.width - 2 * 8.w);
+            calculatedItems = CalculatedItems(
+                textSpans: List.empty(growable: true),
+                pageNo: calculatedItems.pageNo,
+                totalPages: calculatedItems.totalPages,
+                angNo: _sourcePageNo);
+            height += additionalHeight;
+            height += getTextHeight(span: span, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span);
+          } else {
+            height += getTextHeight(span: span, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span);
+            height += additionalHeight;
+            printSizes(height);
+          }
+        }
+        if( element.hindiTransliteration != null && element.hindiTransliteration!.isNotEmpty){
+          TextSpan span2 = getAsscciiSpan(element.hindiTransliteration,
+              style: baaniTextStyle());
+          if (height +
+                  _getAppbarAndStatusBarHeight() +
+                  getTextHeight(span: span2, maxWidth: size.width - 2 * 8.w) >
+              size.height) {
+            calculatedItems.pageNo += 1;
+            calculatedItems.totalPages += 1;
+            calculatedPages.add(calculatedItems);
+            height =
+                getTextHeight(span: angSpan, maxWidth: size.width - 2 * 8.w);
+            calculatedItems = CalculatedItems(
+                textSpans: List.empty(growable: true),
+                pageNo: calculatedItems.pageNo,
+                totalPages: calculatedItems.totalPages,
+                angNo: _sourcePageNo);
+            height += additionalHeight;
+            height +=
+                getTextHeight(span: span2, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span2);
+          } else {
+            height +=
+                getTextHeight(span: span2, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span2);
+            height += additionalHeight;
+            printSizes(height);
+          }
+        }
+      }else if(_language == Languages.Gurmukhi){
+        if(element.gurmukhi.isNotEmpty){
+          TextSpan span =
+              getAsscciiSpan(element.gurmukhi, style: baaniTextStyle());
+          if (height +
+                  _getAppbarAndStatusBarHeight() +
+                  getTextHeight(span: span, maxWidth: size.width - 2 * 8.w) >
+              size.height) {
+            calculatedItems.pageNo += 1;
+            calculatedItems.totalPages += 1;
+            calculatedPages.add(calculatedItems);
+            height =
+                getTextHeight(span: angSpan, maxWidth: size.width - 2 * 8.w);
+            calculatedItems = CalculatedItems(
+                textSpans: List.empty(growable: true),
+                pageNo: calculatedItems.pageNo,
+                totalPages: calculatedItems.totalPages,
+                angNo: _sourcePageNo);
+            height += additionalHeight;
+            height += getTextHeight(span: span, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span);
+          } else {
+            height += getTextHeight(span: span, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span);
+            height += additionalHeight;
+            printSizes(height);
+          }
+        }
+      }else{
+        if(element.hindiTransliteration != null && element.hindiTransliteration!.isNotEmpty){
+          TextSpan span = getAsscciiSpan(element.hindiTransliteration,
+              style: baaniTextStyle());
+          if (height +
+                  _getAppbarAndStatusBarHeight() +
+                  getTextHeight(span: span, maxWidth: size.width - 2 * 8.w) >
+              size.height) {
+            calculatedItems.pageNo += 1;
+            calculatedItems.totalPages += 1;
+            calculatedPages.add(calculatedItems);
+            height =
+                getTextHeight(span: angSpan, maxWidth: size.width - 2 * 8.w);
+            calculatedItems = CalculatedItems(
+                textSpans: List.empty(growable: true),
+                pageNo: calculatedItems.pageNo,
+                totalPages: calculatedItems.totalPages,
+                angNo: _sourcePageNo);
+            height += additionalHeight;
+            height += getTextHeight(span: span, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span);
+          } else {
+            height += getTextHeight(span: span, maxWidth: size.width - 2 * 8.w);
+            calculatedItems.textSpans.add(span);
+            height += additionalHeight;
+            printSizes(height);
+          }
+        }
+      }
+
+    });
+      //   change total pages of all calculated items to the length of calculated pages
+    calculatedPages.forEach((element) {
+      element.totalPages = calculatedPages.length;
+    });
+
+
+  }
+
+  printSizes(height) {
+    // print("========== Sizes ===========");
+    // print(size.height);
+    // print(height + _getAppbarAndStatusBarHeight());
+  }
+
+  Future<void> getSearchedAng() async {
+    setState(() {
+      _isLoading = true;
+    });
+    searchedAng = await Reader.search(searchType: 1, searchText: widget.searchedAng.toString(), shabadId: widget.searchedBaaniLine?.shabadId, bookNo: widget.searchedBaaniLine == null ? widget.bookNo : widget.searchedBaaniLine!.orderId > 60555 ? 2 : 1 );
+    setState(() {
+      _isLoading = false;
+    });
+
+    Future.delayed(const Duration(milliseconds: 100), () {
+      // Scrollable.ensureVisible(
+      //   _scrollKey.currentContext!,
+      //   duration: const Duration(milliseconds: 500),
+      //   curve: Curves.easeInOut,
+      // );
+    });
+  }
+
+  isBookmarked() async {
+    final prefs = SharedPreferences.getInstance();
+    final List<BaaniLineModel>? storedItems = await prefs.then((value) => value.getStringList('myBookmarksList')?.map((e) => BaaniLineModel.fromJson(jsonDecode(e))).toList());
+    if (storedItems != null) {
+      if(storedItems.contains(widget.searchedBaaniLine)){
+        _isBookMarked = true;
+      }else{
+        _isBookMarked = false;
+      }
+      return;
+    }
+    _isBookMarked = false;
+  }
+
+  saveToBookmarks(BaaniLineModel baaniLine) async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<BaaniLineModel>? storedItems = prefs.getStringList('myBookmarksList')?.map((e) => BaaniLineModel.fromJson(jsonDecode(e))).toList();
+    if (storedItems != null) {
+      if(storedItems.contains(baaniLine)){
+        storedItems.remove(baaniLine);
+        prefs.setStringList('myBookmarksList', storedItems.map((e) => jsonEncode(e.toJson())).toList());
+        setState(() {
+          _isBookMarked = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Removed from bookmark'),
+            duration: const Duration(seconds: 2),
+            action: SnackBarAction(
+              label: 'Close',
+              onPressed: () {
+                // Code to execute.
+              },
+            ),
+          ),
+        );
+        return;
+      }
+      storedItems.add(baaniLine);
+      prefs.setStringList('myBookmarksList', storedItems.map((e) => jsonEncode(e.toJson())).toList());
+      // await isBookmarked();
+      setState(() {
+        _isBookMarked = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Bookmarked'),
+          duration: const Duration(seconds: 2),
+          action: SnackBarAction(
+            label: 'Close',
+            onPressed: () {
+              // Code to execute.
+            },
+          ),
+        ),
+      );
+    } else {
+      prefs.setStringList('myBookmarksList', [jsonEncode(baaniLine.toJson())]);
+      setState(() {
+        _isBookMarked = true;
+      });
+    }
   }
 
   Future<void> updateNitnemLists() async {
     // print(_linesPerPage);
+    // print(currentAng.count);
+    // print("================================");
     if(currentAng.count ==0){
       setState(() {
         _isLoading = true;
       });
       currentAng = await Reader.getNitnemAngs(nitnemId: _nitnemId);
-      setState(() {
-        _isLoading = false;
-      });
+      // placeWidgetsToPage();
     }
     // currentAng = await Reader.getNitnemAngs(nitnemId: _nitnemId);
     if(currentAng.baaniLines.isEmpty){
       currentAng = DBResult(baaniLines: List.empty(), count: 0);
+      placeWidgetsToPage();
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
+    placeWidgetsToPage();
     nextAng = await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo + 1, lines: _linesPerPage, bookNo: _bookNo);
     previousAng = _sourcePageNo ==1 && _pageNo ==1 ? DBResult(baaniLines: List.empty(), count: 0) : _sourcePageNo >=1 && _pageNo ==1 ? _previousChapterTotalPages.isEmpty ? DBResult(baaniLines: List.empty(), count: 0) : await Reader.getAngs(sourcePageNo: _sourcePageNo - 1,pageNo: _previousChapterTotalPages.last, lines: _linesPerPage) : await Reader.getAngs(sourcePageNo: _sourcePageNo,pageNo: _pageNo - 1, lines: _linesPerPage);
-    setState(() {});
+    setState(() {
+      _isLoading = false;
+    });
     // if(_pageNo >1 && currentAng.baaniLines.length-1 < _linesPerPage*_pageNo){
     //   // print("reducing page no");
     //   // _pageNo -= 1;
@@ -136,13 +530,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _bookNo = widget.bookNo;
     _isNitnem = widget.isNitnem;
     _nitnemId = widget.nitnemId;
+    _extraBottomPadding = 50.h;
     super.initState();
     resetLinesPerPage();
+    isBookmarked();
     // updateGurbaniLists(); //kro
     // setState(() {});
   }
 
   resetLinesPerPage(){
+    if(widget.searchView){
+      getSearchedAng();
+      return;
+    }
     int linesToShow = 0;
     if(_language == Languages.Both){
       linesToShow = 2;
@@ -210,10 +610,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // updateGurbaniLists(pageNo);
+    // print(_bookNo);
 
-    Size size = MediaQuery.sizeOf(context);
-    // print(MediaQuery.of(context).size.height);
+    size = Size(MediaQuery.sizeOf(context).width, MediaQuery.sizeOf(context).height);
+    // print(size.height);
+    // print(widget.bookNo);
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -347,51 +748,75 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         appBar: AppBar(
-          title: Text('Gurbani'),
+          title: Text( widget.title ?? 'Gurbani'),
           actions: [
+            // IconButton(
+            //   icon: Icon(Icons.search),
+            //   onPressed: () {
+            //     showSearch(
+            //       context: context,
+            //       delegate: BaaniSearchDelegate(),
+            //     );
+            //   },
+            // ),
+            widget.searchView && widget.searchedBaaniLine != null ? IconButton(
+              icon: Icon(_isBookMarked ? Icons.favorite : Icons.favorite_outline,color: whiteColor,),
+              onPressed: () async {
+                await saveToBookmarks(widget.searchedBaaniLine!);
+                setState(() {
+                  // _isBookMarked = !_isBookMarked;
+                });
+              },
+            ) : Container(),
             IconButton(
-              icon: Icon(Icons.search),
+              icon: const Icon(Icons.build,color: whiteColor,),
               onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: BaaniSearchDelegate(),
-                );
+                // Handle tool icon tap
+                // Add your functionality here
+              },
+            ),
+            PopupMenuButton(
+              icon: const Icon(Icons.more_vert,color: whiteColor,),
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem(
+                    child:  Text('Share as Text'),
+                    // Add your functionality for Item 1
+                  ),
+                  const PopupMenuItem(
+                    child: Text('Share as Image'),
+                    // Add your functionality for Item 2
+                  ),
+                  // Add more PopupMenuItems as needed
+                ];
               },
             ),
           ],
         ),
-        body: Stack(
+        body: widget.searchView ? BaaniPageView(
+            baaniLines: searchedAng,
+          linesPerPage: searchedAng.count,
+          showEnglishTransliteration: _showEnglishTransliteration,
+          showEnglishTranslation: _showEnglishTranslation,
+          showPunjabiTranslation: _bookNo == 1 ? _showPunjabiTranslation : false,
+          showPunjabiTeekaTranslation: _showPunjabiTeekaTranslation,
+          showFaridkotTeekaTranslation: _showFaridkotTeekaTranslation,
+          showHindiTranslation: _showHindiTranslation,
+          showHindiTeekaTranslation: _showHindiTeekaTranslation,
+          language: _language,
+          isLoading: _isLoading,
+          searchedLine: widget.searchedBaaniLine,
+          showPageNo: false,
+        ) : Stack(
           children: [
             Container(
               color: Colors.black,
+              height: size.height - _getAppbarAndStatusBarHeight() + _extraBottomPadding,
+              width: size.width,
               child: Center(
-                child: BaaniPageView(
-                    baaniLines: _loadSourceLines || _isNitnem ?
-                                currentAng.baaniLines.length ~/ (_linesPerPage*(_pageNo)) ==0 ?
-                                  DBResult(baaniLines: List.empty(), count: 0) :
-                                  currentAng.baaniLines.length < _pageNo*_linesPerPage ?
-                                    DBResult(baaniLines: List.empty(), count: 0) :
-                                    DBResult(
-                                      baaniLines: currentAng.baaniLines.sublist(
-                                          _pageNo*_linesPerPage ,
-                                          (_pageNo+1)*_linesPerPage >= currentAng.baaniLines.length ?
-                                            currentAng.baaniLines.length :
-                                            (_pageNo+1)*_linesPerPage),
-                                      count: _linesPerPage) :
-                                nextAng,
-                    pageNo: (currentAng.count/_linesPerPage).ceil() == _pageNo ? 1 : _pageNo+1,
-                    totalPages: _loadSourceLines || _isNitnem ? (currentAng.count/_linesPerPage).ceil() : (nextAng.count/_linesPerPage).ceil(),
-                    linesPerPage: _linesPerPage,
-                    showEnglishTransliteration: _showEnglishTransliteration,
-                    showEnglishTranslation: _showEnglishTranslation,
-                    showPunjabiTranslation: _bookNo == 1 ? _showPunjabiTranslation : false,
-                    showPunjabiTeekaTranslation: _showPunjabiTeekaTranslation,
-                    showFaridkotTeekaTranslation: _showFaridkotTeekaTranslation,
-                    showHindiTranslation: _showHindiTranslation,
-                    showHindiTeekaTranslation: _showHindiTeekaTranslation,
-                    language: _language,
+                child: CalculatedViewWidget(
+                    baaniLines: calculatedPages.isEmpty || calculatedPages.length <=1 || calculatedPages.length >= _pageNo ? CalculatedItems(textSpans: List.empty(growable: true), pageNo: 0, totalPages: 0) : calculatedPages[_pageNo],
                   isLoading: _isLoading,
-                  showAng: _isNitnem ? false : true,
                 ),
               ),
             ),
@@ -401,51 +826,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
             SizedBox(
               width: size.width,
-              height: size.height,
+              height: size.height - _getAppbarAndStatusBarHeight() + _extraBottomPadding,
               child: GestureDetector(
                 child: FlipWidget(
                   key: _flipKey,
-                  textureSize: size * 1,
+                  textureSize: Size(size.width, size.height - _getAppbarAndStatusBarHeight() + _extraBottomPadding) * 1,
                   // leftToRight: true, //
                   child: Container(
                     color: Color(0xFFaaaaaa),
                     child: Center(
-                      child: BaaniPageView(
-                          baaniLines: _loadSourceLines || _isNitnem ?
-                                      currentAng.baaniLines.length < _pageNo*_linesPerPage ?
-                                          _pageNo >1 ?
-                                            DBResult(
-                                                baaniLines: currentAng.baaniLines.sublist(
-                                                    (_pageNo-1)*_linesPerPage,
-                                                    (_pageNo)*_linesPerPage >= currentAng.baaniLines.length ?
-                                                      currentAng.baaniLines.length :
-                                                      _pageNo*_linesPerPage
-                                                ),
-                                                count: _linesPerPage
-                                            ) :
-                                            DBResult(baaniLines: List.empty(), count: 0) :
-                                      DBResult(
-                                          baaniLines: currentAng.baaniLines.sublist(
-                                              (_pageNo-1)*_linesPerPage,
-                                              (_pageNo)*_linesPerPage >= currentAng.baaniLines.length ?
-                                                currentAng.baaniLines.length :
-                                                _pageNo*_linesPerPage
-                                          ),
-                                          count: _linesPerPage
-                                      ) : currentAng,
-                          pageNo: _pageNo,
-                          totalPages: (currentAng.count/_linesPerPage).ceil(),
-                          linesPerPage: _linesPerPage,
-                          showEnglishTransliteration: _showEnglishTransliteration,
-                          showEnglishTranslation: _showEnglishTranslation,
-                          showPunjabiTranslation: _bookNo == 1 ? _showPunjabiTranslation : false,
-                          showPunjabiTeekaTranslation: _showPunjabiTeekaTranslation,
-                          showFaridkotTeekaTranslation: _showFaridkotTeekaTranslation,
-                          showHindiTranslation: _showHindiTranslation,
-                          showHindiTeekaTranslation: _showHindiTeekaTranslation,
-                          language: _language,
+                      child: CalculatedViewWidget(
+                        baaniLines: calculatedPages.isEmpty ? CalculatedItems(textSpans: List.empty(growable: true), pageNo: 0, totalPages: 0) : calculatedPages[(_pageNo < 1 ? 1 : _pageNo)-1],
                         isLoading: _isLoading,
-                        showAng: _isNitnem ? false : true,
                       ),
                     ),
                   ),
@@ -475,8 +867,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       return;
                     }else if(_sourcePageNo >=1 && _pageNo == 1){
                       _sourcePageNo -= 1;
-                      _pageNo = _previousChapterTotalPages.last;
-                      _previousChapterTotalPages.removeLast();
+                      if(_sourcePageNo < 1){
+                        _sourcePageNo = 1;
+                      }
+                      _pageNo = _previousChapterTotalPages.isEmpty ? 0 : _previousChapterTotalPages.last;
+                      if(_previousChapterTotalPages.isNotEmpty){
+                        _previousChapterTotalPages.removeLast();
+                      }
                     }else if(_sourcePageNo >=1 && _pageNo >= 1){
                       _pageNo -= 1;
                       // print(_pageNo);
@@ -486,19 +883,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   if(isLeftToRight != null){
                     if(_isNitnem){
-                      if(currentAng.baaniLines.length - (_linesPerPage * (_pageNo)) <0){
-                        _pageNo = (currentAng.baaniLines.length/_linesPerPage).ceil();
-                        // return;
+                      // if(currentAng.baaniLines.length - (_linesPerPage * (_pageNo)) <0){
+                      //   _pageNo = (currentAng.baaniLines.length/_linesPerPage).ceil();
+                      //   // return;
+                      // }
+                      if(_pageNo > calculatedPages.length){
+                        _pageNo = calculatedPages.length;
+                        return;
                       }
 
                       updateNitnemLists();
                     }else{
                       if(_loadSourceLines){
-                        if((currentAng.baaniLines.length - (_linesPerPage * (_pageNo)) <0) && (currentAng.baaniLines.length - (_linesPerPage * (_pageNo-1)) <=0)){
+                        if(calculatedPages.length - (_pageNo) <0){
                           _pageNo = 1;
                           _sourcePageNo += 1;
                           // return;
                         }
+
+                        // if((currentAng.baaniLines.length - (_linesPerPage * (_pageNo)) <0) && (currentAng.baaniLines.length - (_linesPerPage * (_pageNo-1)) <=0)){
+                        //   _pageNo = 1;
+                        //   _sourcePageNo += 1;
+                        //   // return;
+                        // }
                         // updateGurbaniLists();
                         // return;
                       }
@@ -595,3 +1002,82 @@ class BaaniSearchDelegate extends SearchDelegate<BaaniLineModel> {
     );
   }
 }
+
+
+/*
+BaaniPageView(
+                    baaniLines: _loadSourceLines || _isNitnem ?
+                                currentAng.baaniLines.length ~/ (_linesPerPage*(_pageNo)) ==0 ?
+                                  DBResult(baaniLines: List.empty(), count: 0) :
+                                  currentAng.baaniLines.length < _pageNo*_linesPerPage ?
+                                    DBResult(baaniLines: List.empty(), count: 0) :
+                                    DBResult(
+                                      baaniLines: currentAng.baaniLines.sublist(
+                                          _pageNo*_linesPerPage ,
+                                          (_pageNo+1)*_linesPerPage >= currentAng.baaniLines.length ?
+                                            currentAng.baaniLines.length :
+                                            (_pageNo+1)*_linesPerPage),
+                                      count: _linesPerPage) :
+                                nextAng,
+                    pageNo: (currentAng.count/_linesPerPage).ceil() == _pageNo ? 1 : _pageNo+1,
+                    totalPages: _loadSourceLines || _isNitnem ? (currentAng.count/_linesPerPage).ceil() : (nextAng.count/_linesPerPage).ceil(),
+                    linesPerPage: _linesPerPage,
+                    showEnglishTransliteration: _showEnglishTransliteration,
+                    showEnglishTranslation: _showEnglishTranslation,
+                    showPunjabiTranslation: _bookNo == 1 ? _showPunjabiTranslation : false,
+                    showPunjabiTeekaTranslation: _showPunjabiTeekaTranslation,
+                    showFaridkotTeekaTranslation: _showFaridkotTeekaTranslation,
+                    showHindiTranslation: _showHindiTranslation,
+                    showHindiTeekaTranslation: _showHindiTeekaTranslation,
+                    language: _language,
+                  isLoading: _isLoading,
+                  showAng: _isNitnem ? false : true,
+                ),
+
+
+
+
+
+                ========================================================
+
+
+
+                BaaniPageView(
+                          baaniLines: _loadSourceLines || _isNitnem ?
+                                      currentAng.baaniLines.length < _pageNo*_linesPerPage ?
+                                          _pageNo >1 ?
+                                            DBResult(
+                                                baaniLines: currentAng.baaniLines.sublist(
+                                                    (_pageNo-1)*_linesPerPage,
+                                                    (_pageNo)*_linesPerPage >= currentAng.baaniLines.length ?
+                                                      currentAng.baaniLines.length :
+                                                      _pageNo*_linesPerPage
+                                                ),
+                                                count: _linesPerPage
+                                            ) :
+                                            DBResult(baaniLines: List.empty(), count: 0) :
+                                      DBResult(
+                                          baaniLines: currentAng.baaniLines.sublist(
+                                              (_pageNo-1)*_linesPerPage,
+                                              (_pageNo)*_linesPerPage >= currentAng.baaniLines.length ?
+                                                currentAng.baaniLines.length :
+                                                _pageNo*_linesPerPage
+                                          ),
+                                          count: _linesPerPage
+                                      ) : currentAng,
+                          pageNo: _pageNo,
+                          totalPages: (currentAng.count/_linesPerPage).ceil(),
+                          linesPerPage: _linesPerPage,
+                          showEnglishTransliteration: _showEnglishTransliteration,
+                          showEnglishTranslation: _showEnglishTranslation,
+                          showPunjabiTranslation: _bookNo == 1 ? _showPunjabiTranslation : false,
+                          showPunjabiTeekaTranslation: _showPunjabiTeekaTranslation,
+                          showFaridkotTeekaTranslation: _showFaridkotTeekaTranslation,
+                          showHindiTranslation: _showHindiTranslation,
+                          showHindiTeekaTranslation: _showHindiTeekaTranslation,
+                          language: _language,
+                        isLoading: _isLoading,
+                        showAng: _isNitnem ? false : true,
+                      ),
+
+ */

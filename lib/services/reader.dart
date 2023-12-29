@@ -127,6 +127,7 @@ class Reader{
   }
 
   static Future<DBResult> getNitnemAngs({required int nitnemId}) async {
+    print(nitnemId);
     var count = await DataService.database.rawQuery('SELECT COUNT(*) FROM bani_lines where bani_id = $nitnemId')
         .then((value) {
       // print(value);
@@ -239,5 +240,141 @@ ORDER by
       return baaniLines;
     });
     return result;
+  }
+
+  static Future<DBResult> search({required int searchType, required String searchText, int bookNo =1, String? shabadId}) async {
+    switch(searchType){
+      case 1:
+        var count = await DataService.database.rawQuery('SELECT COUNT(*) FROM lines where ${shabadId != null ? "shabad_id = '$shabadId'" : "source_page = $searchText"} AND ${getBookRange(bookNo)}')
+            .then((value) {
+          // print(value);
+          return value[0]['COUNT(*)'] as int;
+        });
+
+        String query = """
+      SELECT
+    lines.*,
+    MAX(CASE WHEN languages.name_english = 'English' THEN transliterations.transliteration END) AS english_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Punjabi' THEN transliterations.transliteration END) AS punjabi_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Spanish' THEN transliterations.transliteration END) AS spanish_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Hindi' THEN transliterations.transliteration END) AS hindi_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Urdu' THEN transliterations.transliteration END) AS urdu_transliteration,
+    MAX(CASE WHEN translations.translation_source_id ${bookNo == 1 ? "= 1": "= 8"} THEN translations.translation END) AS translation_english,
+    MAX(CASE WHEN translations.translation_source_id = 3 THEN translations.translation END) AS translation_punjabi,
+    MAX(CASE WHEN translations.translation_source_id = 5 THEN translations.translation END) AS translation_faridkot_teeka,
+    MAX(CASE WHEN translations.translation_source_id = 6 THEN translations.translation END) AS translation_punjabi_teeka
+FROM
+    (SELECT * FROM lines WHERE ${shabadId != null ? "lines.shabad_id = '$shabadId'" : "lines.source_page = $searchText"} AND ${getBookRange(bookNo)} ORDER BY lines.order_id asc) AS lines
+LEFT JOIN
+    transliterations ON lines.id = transliterations.line_id
+LEFT JOIN
+    languages ON transliterations.language_id = languages.id
+LEFT JOIN
+    translations ON lines.id = translations.line_id
+GROUP BY
+    lines.id, lines.shabad_id, lines.source_page, lines.source_line, lines.first_letters,
+    lines.vishraam_first_letters, lines.gurmukhi, lines.pronunciation,
+    lines.pronunciation_information, lines.type_id, lines.order_id
+ORDER by
+	lines.order_id;
+    """;
+        var result = await DataService.database.rawQuery(query)
+            .then((value) {
+          List<BaaniLineModel> baaniLines = List.empty(growable: true);
+          value?.forEach((element) {
+            baaniLines.add(BaaniLineModel.fromJson(element));
+          });
+          return baaniLines;
+        });
+        return DBResult(baaniLines: result, count: count);
+      case 2:
+        var count = await DataService.database.rawQuery("SELECT COUNT(*) FROM lines where LOWER(first_letters) LIKE LOWER('$searchText%')")
+            .then((value) {
+          // print(value);
+          return value[0]['COUNT(*)'] as int;
+        });
+
+        String query = """
+      SELECT
+    lines.*,
+    MAX(CASE WHEN languages.name_english = 'English' THEN transliterations.transliteration END) AS english_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Punjabi' THEN transliterations.transliteration END) AS punjabi_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Spanish' THEN transliterations.transliteration END) AS spanish_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Hindi' THEN transliterations.transliteration END) AS hindi_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Urdu' THEN transliterations.transliteration END) AS urdu_transliteration,
+    MAX(CASE WHEN translations.translation_source_id = 1 THEN translations.translation END) AS translation_english,
+    MAX(CASE WHEN translations.translation_source_id = 3 THEN translations.translation END) AS translation_punjabi,
+    MAX(CASE WHEN translations.translation_source_id = 5 THEN translations.translation END) AS translation_faridkot_teeka,
+    MAX(CASE WHEN translations.translation_source_id = 6 THEN translations.translation END) AS translation_punjabi_teeka
+FROM
+    (SELECT * FROM lines WHERE LOWER(lines.first_letters) LIKE LOWER('$searchText%') ORDER BY lines.order_id asc) AS lines
+LEFT JOIN
+    transliterations ON lines.id = transliterations.line_id
+LEFT JOIN
+    languages ON transliterations.language_id = languages.id
+LEFT JOIN
+    translations ON lines.id = translations.line_id
+GROUP BY
+    lines.id, lines.shabad_id, lines.source_page, lines.source_line, lines.first_letters,
+    lines.vishraam_first_letters, lines.gurmukhi, lines.pronunciation,
+    lines.pronunciation_information, lines.type_id, lines.order_id
+ORDER by
+	lines.order_id;
+    """;
+        var result = await DataService.database.rawQuery(query)
+            .then((value) {
+          List<BaaniLineModel> baaniLines = List.empty(growable: true);
+          value?.forEach((element) {
+            baaniLines.add(BaaniLineModel.fromJson(element));
+          });
+          return baaniLines;
+        });
+        return DBResult(baaniLines: result, count: count);
+      case 3:
+        var count = await DataService.database.rawQuery("SELECT COUNT(*) FROM lines where LOWER(first_letters) LIKE LOWER('%$searchText%')")
+            .then((value) {
+          // print(value);
+          return value[0]['COUNT(*)'] as int;
+        });
+
+        String query = """
+      SELECT
+    lines.*,
+    MAX(CASE WHEN languages.name_english = 'English' THEN transliterations.transliteration END) AS english_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Punjabi' THEN transliterations.transliteration END) AS punjabi_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Spanish' THEN transliterations.transliteration END) AS spanish_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Hindi' THEN transliterations.transliteration END) AS hindi_transliteration,
+    MAX(CASE WHEN languages.name_english = 'Urdu' THEN transliterations.transliteration END) AS urdu_transliteration,
+    MAX(CASE WHEN translations.translation_source_id = 1 THEN translations.translation END) AS translation_english,
+    MAX(CASE WHEN translations.translation_source_id = 3 THEN translations.translation END) AS translation_punjabi,
+    MAX(CASE WHEN translations.translation_source_id = 5 THEN translations.translation END) AS translation_faridkot_teeka,
+    MAX(CASE WHEN translations.translation_source_id = 6 THEN translations.translation END) AS translation_punjabi_teeka
+FROM
+    (SELECT * FROM lines WHERE LOWER(lines.first_letters) LIKE LOWER('%$searchText%') ORDER BY lines.order_id asc) AS lines
+LEFT JOIN
+    transliterations ON lines.id = transliterations.line_id
+LEFT JOIN
+    languages ON transliterations.language_id = languages.id
+LEFT JOIN
+    translations ON lines.id = translations.line_id
+GROUP BY
+    lines.id, lines.shabad_id, lines.source_page, lines.source_line, lines.first_letters,
+    lines.vishraam_first_letters, lines.gurmukhi, lines.pronunciation,
+    lines.pronunciation_information, lines.type_id, lines.order_id
+ORDER by
+	lines.order_id;
+    """;
+        var result = await DataService.database.rawQuery(query)
+            .then((value) {
+          List<BaaniLineModel> baaniLines = List.empty(growable: true);
+          value?.forEach((element) {
+            baaniLines.add(BaaniLineModel.fromJson(element));
+          });
+          return baaniLines;
+        });
+        return DBResult(baaniLines: result, count: count);
+      default:
+        return DBResult(baaniLines: List<BaaniLineModel>.empty(), count: 0);
+    }
   }
 }

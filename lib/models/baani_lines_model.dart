@@ -88,4 +88,12 @@ class BaaniLineModel {
     _data['translation_hindi_teeka'] = translationHindiTeeka;
     return _data;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is BaaniLineModel && runtimeType == other.runtimeType && orderId == other.orderId;
+
+  @override
+  int get hashCode => orderId.hashCode;
 }

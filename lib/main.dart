@@ -13,27 +13,27 @@ void main() async {
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform
   );
-  FlutterError.onError = (errorDetails) {
-    try{
-      if(errorDetails.library == 'image resource service'){
-        return;
-      }
-
-      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-    } catch(e){
-      //
-    }
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    // If you wish to record a "non-fatal" exception, please remove the "fatal" parameter
-    try{
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
-    } catch(e){
-      return true;
-    }
-
-  };
+  // FlutterError.onError = (errorDetails) {
+  //   try{
+  //     if(errorDetails.library == 'image resource service'){
+  //       return;
+  //     }
+  //
+  //     FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  //   } catch(e){
+  //     //
+  //   }
+  // };
+  // PlatformDispatcher.instance.onError = (error, stack) {
+  //   // If you wish to record a "non-fatal" exception, please remove the "fatal" parameter
+  //   try{
+  //     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+  //     return true;
+  //   } catch(e){
+  //     return true;
+  //   }
+  //
+  // };
   runApp(const App());
 }
 
